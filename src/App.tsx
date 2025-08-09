@@ -10,7 +10,7 @@ interface KeyboardConfig {
   stabilizers: 'cherry' | 'durock' | 'zeal'
 }
 
-type AppPage = 'welcome' | 'builder'
+type AppPage = 'welcome' | 'preferences' | 'builder'
 
 export function App() {
   const [currentPage, setCurrentPage] = useState<AppPage>('welcome')
@@ -200,7 +200,7 @@ export function App() {
               isLoaded ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
             }`}>
               <button
-                onClick={() => setCurrentPage('builder')}
+                onClick={() => setCurrentPage('preferences')}
                 className="relative w-full bg-white text-slate-950 font-medium py-4 px-6 rounded-2xl shadow-lg shadow-white/10 hover:shadow-white/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden group"
               >
                 {/* Animated background effect */}
@@ -232,7 +232,157 @@ export function App() {
     )
   }
 
-  // Keyboard Builder Page
+  // Preferences Page - No 3D Preview, Just Preference Selection
+  if (currentPage === 'preferences') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
+        <div className="pt-4 px-4 pb-24">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setCurrentPage('welcome')}
+                className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-xl font-semibold text-white">Preferences</h1>
+                <p className="text-slate-400 text-sm">Tell us your preferences for personalized recommendations</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Configuration Sections */}
+          <div className="space-y-6">
+            {/* Layout Selection */}
+            <div>
+              <h2 className="text-lg font-medium text-white mb-4">Preferred Layout</h2>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: 'tkl', name: 'TKL', desc: '87 keys' },
+                  { id: '60', name: '60%', desc: '61 keys' },
+                  { id: 'full', name: 'Full', desc: '104 keys' },
+                ].map((layout) => (
+                  <button
+                    key={layout.id}
+                    onClick={() => setKeyboardConfig(prev => ({ ...prev, layout: layout.id as any }))}
+                    className={`p-4 rounded-xl border transition-all duration-200 ${
+                      keyboardConfig.layout === layout.id
+                        ? 'bg-white/10 border-white/30 text-white'
+                        : 'bg-slate-900/40 border-slate-700/50 text-slate-300 hover:bg-slate-900/60 hover:border-slate-600/50'
+                    }`}
+                  >
+                    <div className="font-medium text-sm mb-1">{layout.name}</div>
+                    <div className="text-xs opacity-70">{layout.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Switch Type */}
+            <div>
+              <h2 className="text-lg font-medium text-white mb-4">Switch Type Preference</h2>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: 'linear', name: 'Linear', desc: 'Smooth & Fast', color: 'from-red-500/30 to-red-600/30 border-red-500/40' },
+                  { id: 'tactile', name: 'Tactile', desc: 'Bumpy Feel', color: 'from-amber-500/30 to-amber-600/30 border-amber-500/40' },
+                  { id: 'clicky', name: 'Clicky', desc: 'Audible Click', color: 'from-blue-500/30 to-blue-600/30 border-blue-500/40' },
+                ].map((switch_) => (
+                  <button
+                    key={switch_.id}
+                    onClick={() => setKeyboardConfig(prev => ({ ...prev, switches: switch_.id as any }))}
+                    className={`p-4 rounded-xl border transition-all duration-200 ${
+                      keyboardConfig.switches === switch_.id
+                        ? `bg-gradient-to-br ${switch_.color} text-white`
+                        : 'bg-slate-900/40 border-slate-700/50 text-slate-300 hover:bg-slate-900/60'
+                    }`}
+                  >
+                    <div className="font-medium text-sm mb-1">{switch_.name}</div>
+                    <div className="text-xs opacity-70">{switch_.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Case Material */}
+            <div>
+              <h2 className="text-lg font-medium text-white mb-4">Case Material Preference</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: 'aluminum', name: 'Aluminum', desc: 'Premium & Durable' },
+                  { id: 'plastic', name: 'Plastic', desc: 'Lightweight' },
+                  { id: 'wood', name: 'Wood', desc: 'Natural & Warm' },
+                  { id: 'carbon', name: 'Carbon Fiber', desc: 'Ultra Premium' },
+                ].map((material) => (
+                  <button
+                    key={material.id}
+                    onClick={() => setKeyboardConfig(prev => ({ ...prev, case: material.id as any }))}
+                    className={`p-4 rounded-xl border transition-all duration-200 text-left ${
+                      keyboardConfig.case === material.id
+                        ? 'bg-white/10 border-white/30 text-white'
+                        : 'bg-slate-900/40 border-slate-700/50 text-slate-300 hover:bg-slate-900/60'
+                    }`}
+                  >
+                    <div className="font-medium text-sm mb-1">{material.name}</div>
+                    <div className="text-xs opacity-70">{material.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Keycap Profile */}
+            <div>
+              <h2 className="text-lg font-medium text-white mb-4">Keycap Profile</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: 'cherry', name: 'Cherry', desc: 'Low profile, comfortable' },
+                  { id: 'oem', name: 'OEM', desc: 'Standard height' },
+                  { id: 'sa', name: 'SA', desc: 'High profile, sculpted' },
+                  { id: 'xda', name: 'XDA', desc: 'Uniform, flat' },
+                ].map((profile) => (
+                  <button
+                    key={profile.id}
+                    onClick={() => setKeyboardConfig(prev => ({ ...prev, keycaps: profile.id as any }))}
+                    className={`p-4 rounded-xl border transition-all duration-200 text-left ${
+                      keyboardConfig.keycaps === profile.id
+                        ? 'bg-white/10 border-white/30 text-white'
+                        : 'bg-slate-900/40 border-slate-700/50 text-slate-300 hover:bg-slate-900/60'
+                    }`}
+                  >
+                    <div className="font-medium text-sm mb-1">{profile.name}</div>
+                    <div className="text-xs opacity-70">{profile.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Fixed Bottom Actions */}
+          <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setCurrentPage('welcome')}
+                className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200"
+              >
+                Back
+              </button>
+              <button 
+                onClick={() => setCurrentPage('builder')}
+                className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200"
+              >
+                See Recommendations
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Expanded Floating View - Separated Keyboard Components
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
       <div className="pt-4 px-4 pb-24">
@@ -240,7 +390,7 @@ export function App() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => setCurrentPage('welcome')}
+              onClick={() => setCurrentPage('preferences')}
               className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,7 +399,7 @@ export function App() {
             </button>
             <div>
               <h1 className="text-xl font-semibold text-white">Keyboard Builder</h1>
-              <p className="text-slate-400 text-sm">Design your perfect keyboard</p>
+              <p className="text-slate-400 text-sm">Exploded view of your custom keyboard</p>
             </div>
           </div>
           
@@ -260,90 +410,118 @@ export function App() {
           </button>
         </div>
 
-        {/* 3D Visualization Area - Placeholder for Keysim integration */}
-        <div className="mb-8 h-64 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-800/60 border border-slate-700/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-12 bg-gradient-to-r from-slate-600 to-slate-500 rounded-lg mx-auto mb-4 shadow-lg" />
-            <p className="text-slate-400 text-sm font-medium">3D Keyboard Preview</p>
-            <p className="text-slate-500 text-xs mt-1">Keysim integration will render here</p>
+        {/* 3D Exploded View - Integration with KeySim */}
+        <div className="mb-8 h-80 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-800/60 border border-slate-700/50 backdrop-blur-sm relative overflow-hidden">
+          {/* Floating Keycaps */}
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 animate-float">
+            <div className="relative">
+              <div className="w-40 h-8 bg-gradient-to-br from-slate-300 to-slate-500 rounded-lg shadow-2xl transform perspective-1000 rotateX-15 hover:rotateX-5 transition-transform duration-500">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-lg" />
+                <div className="absolute inset-x-2 inset-y-1 grid grid-cols-10 gap-0.5">
+                  {[...Array(10)].map((_, i) => (
+                    <div key={i} className="bg-white/30 rounded-sm" />
+                  ))}
+                </div>
+              </div>
+              <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Keycaps
+              </div>
+            </div>
+          </div>
+
+          {/* Floating Switches */}
+          <div className="absolute top-24 left-1/2 transform -translate-x-1/2 animate-float" style={{ animationDelay: '0.5s' }}>
+            <div className="relative">
+              <div className="w-36 h-6 bg-gradient-to-br from-amber-400 to-amber-600 rounded-md shadow-xl transform perspective-1000 rotateX-10 hover:rotateX-0 transition-transform duration-500">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent rounded-md" />
+                <div className="absolute inset-x-2 inset-y-1 grid grid-cols-8 gap-0.5">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="bg-white/40 rounded-xs" />
+                  ))}
+                </div>
+              </div>
+              <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Switches
+              </div>
+            </div>
+          </div>
+
+          {/* Floating Case */}
+          <div className="absolute top-44 left-1/2 transform -translate-x-1/2 animate-float" style={{ animationDelay: '1s' }}>
+            <div className="relative">
+              <div className="w-44 h-12 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl shadow-2xl transform perspective-1000 rotateX-5 hover:rotateX-0 transition-transform duration-500">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl" />
+                <div className="absolute inset-2 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-lg" />
+                </div>
+              </div>
+              <div className="absolute -top-2 -right-2 bg-slate-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Case
+              </div>
+            </div>
+          </div>
+
+          {/* Assembly Lines */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            <defs>
+              <linearGradient id="assemblyLine" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="rgba(99, 102, 241, 0)" />
+                <stop offset="50%" stopColor="rgba(99, 102, 241, 0.5)" />
+                <stop offset="100%" stopColor="rgba(99, 102, 241, 0)" />
+              </linearGradient>
+            </defs>
+            <line x1="50%" y1="20%" x2="50%" y2="35%" stroke="url(#assemblyLine)" strokeWidth="2" strokeDasharray="5,5" className="animate-pulse" />
+            <line x1="50%" y1="40%" x2="50%" y2="55%" stroke="url(#assemblyLine)" strokeWidth="2" strokeDasharray="5,5" className="animate-pulse" style={{ animationDelay: '0.5s' }} />
+          </svg>
+
+          {/* Background particles */}
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-blue-400/30 rounded-full animate-ping"
+              style={{
+                left: `${20 + Math.random() * 60}%`,
+                top: `${20 + Math.random() * 60}%`,
+                animationDelay: `${i * 300}ms`,
+                animationDuration: `${2000 + i * 200}ms`
+              }}
+            />
+          ))}
+
+          {/* Integration placeholder */}
+          <div className="absolute bottom-4 left-4 text-slate-500 text-xs">
+            KeySim 3D Integration Ready
           </div>
         </div>
 
-        {/* Configuration Sections */}
-        <div className="space-y-6">
-          {/* Layout Selection */}
-          <div>
-            <h2 className="text-lg font-medium text-white mb-4">Layout</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { id: 'tkl', name: 'TKL', desc: '87 keys' },
-                { id: '60', name: '60%', desc: '61 keys' },
-                { id: 'full', name: 'Full', desc: '104 keys' },
-              ].map((layout) => (
-                <button
-                  key={layout.id}
-                  onClick={() => setKeyboardConfig(prev => ({ ...prev, layout: layout.id as any }))}
-                  className={`p-4 rounded-xl border transition-all duration-200 ${
-                    keyboardConfig.layout === layout.id
-                      ? 'bg-white/10 border-white/30 text-white'
-                      : 'bg-slate-900/40 border-slate-700/50 text-slate-300 hover:bg-slate-900/60 hover:border-slate-600/50'
-                  }`}
-                >
-                  <div className="font-medium text-sm mb-1">{layout.name}</div>
-                  <div className="text-xs opacity-70">{layout.desc}</div>
-                </button>
-              ))}
+        {/* Component Details */}
+        <div className="space-y-4 mb-8">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <h3 className="text-white font-medium text-sm">Keycaps</h3>
+              </div>
+              <p className="text-slate-400 text-xs">{keyboardConfig.keycaps.toUpperCase()} Profile</p>
+              <p className="text-slate-500 text-xs mt-1">Premium quality</p>
             </div>
-          </div>
-
-          {/* Switch Type */}
-          <div>
-            <h2 className="text-lg font-medium text-white mb-4">Switch Type</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { id: 'linear', name: 'Linear', desc: 'Smooth & Fast', color: 'from-red-500/30 to-red-600/30 border-red-500/40' },
-                { id: 'tactile', name: 'Tactile', desc: 'Bumpy Feel', color: 'from-amber-500/30 to-amber-600/30 border-amber-500/40' },
-                { id: 'clicky', name: 'Clicky', desc: 'Audible Click', color: 'from-blue-500/30 to-blue-600/30 border-blue-500/40' },
-              ].map((switch_) => (
-                <button
-                  key={switch_.id}
-                  onClick={() => setKeyboardConfig(prev => ({ ...prev, switches: switch_.id as any }))}
-                  className={`p-4 rounded-xl border transition-all duration-200 ${
-                    keyboardConfig.switches === switch_.id
-                      ? `bg-gradient-to-br ${switch_.color} text-white`
-                      : 'bg-slate-900/40 border-slate-700/50 text-slate-300 hover:bg-slate-900/60'
-                  }`}
-                >
-                  <div className="font-medium text-sm mb-1">{switch_.name}</div>
-                  <div className="text-xs opacity-70">{switch_.desc}</div>
-                </button>
-              ))}
+            
+            <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                <h3 className="text-white font-medium text-sm">Switches</h3>
+              </div>
+              <p className="text-slate-400 text-xs">{keyboardConfig.switches} Type</p>
+              <p className="text-slate-500 text-xs mt-1">Optimized feel</p>
             </div>
-          </div>
-
-          {/* Case Material */}
-          <div>
-            <h2 className="text-lg font-medium text-white mb-4">Case Material</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { id: 'aluminum', name: 'Aluminum', desc: 'Premium & Durable' },
-                { id: 'plastic', name: 'Plastic', desc: 'Lightweight' },
-                { id: 'wood', name: 'Wood', desc: 'Natural & Warm' },
-                { id: 'carbon', name: 'Carbon Fiber', desc: 'Ultra Premium' },
-              ].map((material) => (
-                <button
-                  key={material.id}
-                  onClick={() => setKeyboardConfig(prev => ({ ...prev, case: material.id as any }))}
-                  className={`p-4 rounded-xl border transition-all duration-200 text-left ${
-                    keyboardConfig.case === material.id
-                      ? 'bg-white/10 border-white/30 text-white'
-                      : 'bg-slate-900/40 border-slate-700/50 text-slate-300 hover:bg-slate-900/60'
-                  }`}
-                >
-                  <div className="font-medium text-sm mb-1">{material.name}</div>
-                  <div className="text-xs opacity-70">{material.desc}</div>
-                </button>
-              ))}
+            
+            <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
+                <h3 className="text-white font-medium text-sm">Case</h3>
+              </div>
+              <p className="text-slate-400 text-xs">{keyboardConfig.case} Material</p>
+              <p className="text-slate-500 text-xs mt-1">Durable build</p>
             </div>
           </div>
         </div>
@@ -352,10 +530,10 @@ export function App() {
         <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
           <div className="flex space-x-3">
             <button className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200">
-              Save Configuration
+              Customize Parts
             </button>
             <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200">
-              Add to Cart
+              Add to Cart - $399
             </button>
           </div>
         </div>
