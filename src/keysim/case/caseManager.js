@@ -92,6 +92,9 @@ export default class CaseManager {
     this.height = 1;
     this.angle = 6;
     this.r = 0.5;
+    
+    console.log('🏗️ Initializing CaseManager with layout:', this.layoutName, 'style:', this.style);
+    
     this.setup();
   }
 
@@ -119,6 +122,8 @@ export default class CaseManager {
     //case global position (shadow is out side this.group)
     this.position();
     this.scene.add(this.group);
+    
+    console.log('🏠 Case setup complete! Group added to scene:', this.group);
 
     subscribe("case.primaryColor", (state) => {
       this.color = state.case.primaryColor;

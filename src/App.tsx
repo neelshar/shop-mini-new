@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { KeysimViewer } from './components/KeysimViewer'
+import { RealKeysim } from './components/RealKeysim'
 
 // Types for our keyboard configuration
 interface KeyboardConfig {
@@ -418,9 +418,9 @@ export function App() {
             </button>
           </div>
 
-          {/* 3D KeySim Viewer */}
+          {/* 3D KeySim Viewer - REAL from GitHub */}
           <div className="mb-8 h-80 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-800/60 border border-slate-700/50 backdrop-blur-sm relative overflow-hidden">
-            <KeysimViewer
+            <RealKeysim
               layout="80"
               caseColor={keyboardConfig.case_color}
               keycapColor={keyboardConfig.keycap_color}

@@ -6,7 +6,10 @@ const initial_settings = {
   ...defaultSettings,
   case: {
     ...defaultSettings.case,
-    layout: "80" // Use TKL layout instead of 60iso
+    layout: "80", // Use TKL layout instead of 60iso
+    style: "CASE_1", // Use CASE_1 style (visible case style)
+    primaryColor: "#eeeeee", // Default case color
+    material: "brushed" // Use brushed material like defaults
   }
 }
 

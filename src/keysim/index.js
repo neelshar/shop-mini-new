@@ -7,6 +7,8 @@ const SCREEN_SCALE = 50;
 export default (element) => {
   // Initialize immediately without webfont dependency
   try {
+    console.log('🚀 Initializing KeySim with case and keys...');
+    
     //MAIN THREE JS SETUP
     //-------------------------------------
     const ThreeApp = new SceneManager({
@@ -18,13 +20,25 @@ export default (element) => {
       scene: ThreeApp.scene,
     });
 
-    new CaseManager({
+    const CASE = new CaseManager({
       scene: ThreeApp.scene,
     });
 
+    console.log('✅ KeySim managers initialized:', { ThreeApp, KEYS, CASE });
+
     //start render loop
     ThreeApp.add(KEYS);
+    ThreeApp.add(CASE); // Make sure case is added to render loop
     ThreeApp.tick();
+    
+    // Force a render to make sure everything appears
+    setTimeout(() => {
+      ThreeApp.render();
+    }, 100);
+    
+    console.log('🎹 KeySim fully loaded with case and keys!');
+    
+    return { ThreeApp, KEYS, CASE }; // Return for debugging
   } catch (error) {
     console.error('Failed to initialize KeySim:', error);
     // Fallback will be handled by the React component

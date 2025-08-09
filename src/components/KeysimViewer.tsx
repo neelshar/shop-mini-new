@@ -372,20 +372,48 @@ export function KeysimViewer({
     }, 1000)
   }
 
+  // Use a callback ref to ensure DOM stability
+  const setContainerRef = (node: HTMLDivElement | null) => {
+    if (node && !containerRef.current) {
+      containerRef.current = node
+      // Initialize KeySim once the DOM is ready
+      setTimeout(() => {
+        const initKeysim = async () => {
+          try {
+            const KeysimApp = await import('../keysim/index.js')
+            if (KeysimApp.default && containerRef.current) {
+              // Create wrapper inside the stable container
+              const wrapper = document.createElement('div')
+              wrapper.style.width = '100%'
+              wrapper.style.height = '100%'
+              containerRef.current.appendChild(wrapper)
+              
+              await KeysimApp.default(wrapper)
+              setStatus('success')
+              console.log('✅ KeySim initialized successfully!')
+            }
+          } catch (error) {
+            console.error('KeySim initialization error:', error)
+            setRetryCount(prev => prev + 1)
+          }
+        }
+        initKeysim()
+      }, 500)
+    }
+  }
+
   return (
     <div 
-      ref={containerRef}
+      ref={setContainerRef}
       className={`w-full h-full ${className}`}
       style={{ 
         minHeight: '300px',
         background: 'transparent',
         position: 'relative'
       }}
-      // Prevent React from manipulating children
-      suppressContentEditableWarning
-      suppressHydrationWarning
+      data-keysim-container="true"
     >
-      {renderContent()}
+      {status === 'loading' && renderContent()}
     </div>
   )
 }
