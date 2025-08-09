@@ -1,7 +1,5 @@
-import { useState, useEffect, Suspense } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Environment } from '@react-three/drei'
-import { Keyboard3D } from './components/Keyboard3D'
+import { useState, useEffect } from 'react'
+import { KeysimViewer } from './components/KeysimViewer'
 
 // Types for our keyboard configuration
 interface KeyboardConfig {
@@ -11,9 +9,12 @@ interface KeyboardConfig {
   case: 'aluminum' | 'plastic' | 'wood' | 'carbon'
   plate: 'steel' | 'aluminum' | 'brass' | 'pc'
   stabilizers: 'cherry' | 'durock' | 'zeal'
+  case_color: string
+  keycap_color: string
+  switch_color: string
 }
 
-type AppPage = 'welcome' | 'preferences' | 'builder'
+type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer'
 
 export function App() {
   const [currentPage, setCurrentPage] = useState<AppPage>('welcome')
@@ -23,7 +24,10 @@ export function App() {
     keycaps: 'cherry',
     case: 'aluminum',
     plate: 'aluminum',
-    stabilizers: 'durock'
+    stabilizers: 'durock',
+    case_color: '#6b7280', // Default grey
+    keycap_color: '#9ca3af', // Default grey
+    switch_color: '#ffa726' // Default tactile orange
   })
   const [isLoaded, setIsLoaded] = useState(false)
 
@@ -376,7 +380,7 @@ export function App() {
                 onClick={() => setCurrentPage('builder')}
                 className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200"
               >
-                See 3D Preview
+                See Recommendations
               </button>
             </div>
           </div>
@@ -385,121 +389,231 @@ export function App() {
     )
   }
 
-  // 3D Exploded View - Real KeySim-inspired 3D Rendering
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
-      <div className="pt-4 px-4 pb-24">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setCurrentPage('preferences')}
-              className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200"
-            >
+  // Builder Page - Shows 3D Keyboard with Basic Config
+  if (currentPage === 'builder') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
+        <div className="pt-4 px-4 pb-24">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setCurrentPage('preferences')}
+                className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-xl font-semibold text-white">Your Keyboard</h1>
+                <p className="text-slate-400 text-sm">Based on your preferences</p>
+              </div>
+            </div>
+            
+            <button className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13h10m-5 5a1 1 0 100 2 1 1 0 000-2zm5 0a1 1 0 100 2 1 1 0 000-2z" />
               </svg>
             </button>
-            <div>
-              <h1 className="text-xl font-semibold text-white">3D Keyboard Builder</h1>
-              <p className="text-slate-400 text-sm">KeySim-powered exploded view</p>
-            </div>
           </div>
-          
-          <button className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13h10m-5 5a1 1 0 100 2 1 1 0 000-2zm5 0a1 1 0 100 2 1 1 0 000-2z" />
-            </svg>
-          </button>
-        </div>
 
-        {/* 3D Keyboard View */}
-        <div className="mb-8 h-96 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-800/60 border border-slate-700/50 backdrop-blur-sm relative overflow-hidden">
-          <Canvas camera={{ position: [15, 10, 15], fov: 45 }}>
-            <Suspense fallback={null}>
-              <Environment preset="studio" />
-              <ambientLight intensity={0.4} />
-              <pointLight position={[10, 10, 10]} intensity={1} />
-              <pointLight position={[-10, 5, -10]} intensity={0.5} />
-              <spotLight position={[0, 20, 0]} intensity={0.8} angle={0.3} penumbra={0.2} />
-              
-              <Keyboard3D 
-                config={{
-                  layout: keyboardConfig.layout,
-                  switches: keyboardConfig.switches,
-                  keycaps: keyboardConfig.keycaps,
-                  case: keyboardConfig.case
-                }}
-                exploded={true}
-              />
-              
-              <OrbitControls 
-                enablePan={false}
-                minDistance={10}
-                maxDistance={30}
-                maxPolarAngle={Math.PI / 2}
-                autoRotate
-                autoRotateSpeed={0.5}
-              />
-            </Suspense>
-          </Canvas>
-          
-          {/* 3D Controls hint */}
-          <div className="absolute bottom-4 left-4 text-slate-400 text-xs bg-slate-900/60 px-3 py-2 rounded-lg backdrop-blur-sm">
-            <div className="font-medium mb-1">Controls</div>
-            <div>Drag to rotate • Scroll to zoom</div>
-          </div>
-          
-          {/* KeySim attribution */}
-          <div className="absolute bottom-4 right-4 text-slate-500 text-xs bg-slate-900/60 px-3 py-2 rounded-lg backdrop-blur-sm">
-            Powered by KeySim 3D Engine
-          </div>
-        </div>
-
-        {/* Component Details */}
-        <div className="space-y-4 mb-8">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <h3 className="text-white font-medium text-sm">Keycaps</h3>
-              </div>
-              <p className="text-slate-400 text-xs">{keyboardConfig.keycaps.toUpperCase()} Profile</p>
-              <p className="text-slate-500 text-xs mt-1">Premium quality</p>
-            </div>
+          {/* 3D KeySim Viewer */}
+          <div className="mb-8 h-80 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-800/60 border border-slate-700/50 backdrop-blur-sm relative overflow-hidden">
+            <KeysimViewer
+              layout="80"
+              caseColor={keyboardConfig.case_color}
+              keycapColor={keyboardConfig.keycap_color}
+              switchColor={keyboardConfig.switch_color}
+            />
             
-            <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                <h3 className="text-white font-medium text-sm">Switches</h3>
-              </div>
-              <p className="text-slate-400 text-xs">{keyboardConfig.switches} Type</p>
-              <p className="text-slate-500 text-xs mt-1">Optimized feel</p>
-            </div>
-            
-            <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
-                <h3 className="text-white font-medium text-sm">Case</h3>
-              </div>
-              <p className="text-slate-400 text-xs">{keyboardConfig.case} Material</p>
-              <p className="text-slate-500 text-xs mt-1">Durable build</p>
+            {/* Touch to rotate hint */}
+            <div className="absolute bottom-4 left-4 text-slate-400 text-xs">
+              Drag to rotate • Pinch to zoom
             </div>
           </div>
-        </div>
 
-        {/* Fixed Bottom Actions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
-          <div className="flex space-x-3">
-            <button className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200">
-              Customize Parts
-            </button>
-            <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200">
-              Add to Cart - $399
-            </button>
+          {/* Component Details */}
+          <div className="space-y-4 mb-8">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <h3 className="text-white font-medium text-sm">Keycaps</h3>
+                </div>
+                <p className="text-slate-400 text-xs">{keyboardConfig.keycaps.toUpperCase()} Profile</p>
+                <p className="text-slate-500 text-xs mt-1">Premium quality</p>
+              </div>
+              
+              <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                  <h3 className="text-white font-medium text-sm">Switches</h3>
+                </div>
+                <p className="text-slate-400 text-xs">{keyboardConfig.switches} Type</p>
+                <p className="text-slate-500 text-xs mt-1">Optimized feel</p>
+              </div>
+              
+              <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
+                  <h3 className="text-white font-medium text-sm">Case</h3>
+                </div>
+                <p className="text-slate-400 text-xs">{keyboardConfig.case} Material</p>
+                <p className="text-slate-500 text-xs mt-1">Durable build</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Fixed Bottom Actions */}
+          <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setCurrentPage('customizer')}
+                className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200"
+              >
+                Customize Colors
+              </button>
+              <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200">
+                Add to Cart - $399
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  // Color Customizer Page
+  if (currentPage === 'customizer') {
+    const colorOptions = [
+      { name: 'Grey', value: '#6b7280' },
+      { name: 'Black', value: '#1f2937' },
+      { name: 'White', value: '#f3f4f6' },
+      { name: 'Blue', value: '#3b82f6' },
+      { name: 'Red', value: '#ef4444' },
+      { name: 'Green', value: '#10b981' },
+      { name: 'Purple', value: '#8b5cf6' },
+      { name: 'Orange', value: '#f97316' },
+      { name: 'Pink', value: '#ec4899' },
+      { name: 'Cyan', value: '#06b6d4' },
+    ]
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
+        <div className="pt-4 px-4 pb-24">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setCurrentPage('builder')}
+                className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-xl font-semibold text-white">Customize Colors</h1>
+                <p className="text-slate-400 text-sm">Make it uniquely yours</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 3D KeySim Preview */}
+          <div className="mb-6 h-64 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-800/60 border border-slate-700/50 backdrop-blur-sm relative overflow-hidden">
+            <KeysimViewer
+              layout="80"
+              caseColor={keyboardConfig.case_color}
+              keycapColor={keyboardConfig.keycap_color}
+              switchColor={keyboardConfig.switch_color}
+            />
+          </div>
+
+          {/* Color Customization */}
+          <div className="space-y-6">
+            {/* Case Color */}
+            <div>
+              <h3 className="text-white font-medium mb-3">Case Color</h3>
+              <div className="grid grid-cols-5 gap-3">
+                {colorOptions.map((color) => (
+                  <button
+                    key={`case-${color.value}`}
+                    onClick={() => setKeyboardConfig(prev => ({ ...prev, case_color: color.value }))}
+                    className={`aspect-square rounded-xl border-2 transition-all duration-200 ${
+                      keyboardConfig.case_color === color.value
+                        ? 'border-white scale-110'
+                        : 'border-slate-600 hover:border-slate-400 hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                  >
+                    <span className="sr-only">{color.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Keycap Color */}
+            <div>
+              <h3 className="text-white font-medium mb-3">Keycap Color</h3>
+              <div className="grid grid-cols-5 gap-3">
+                {colorOptions.map((color) => (
+                  <button
+                    key={`keycap-${color.value}`}
+                    onClick={() => setKeyboardConfig(prev => ({ ...prev, keycap_color: color.value }))}
+                    className={`aspect-square rounded-xl border-2 transition-all duration-200 ${
+                      keyboardConfig.keycap_color === color.value
+                        ? 'border-white scale-110'
+                        : 'border-slate-600 hover:border-slate-400 hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                  >
+                    <span className="sr-only">{color.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Switch Color */}
+            <div>
+              <h3 className="text-white font-medium mb-3">Switch Color</h3>
+              <div className="grid grid-cols-5 gap-3">
+                {colorOptions.map((color) => (
+                  <button
+                    key={`switch-${color.value}`}
+                    onClick={() => setKeyboardConfig(prev => ({ ...prev, switch_color: color.value }))}
+                    className={`aspect-square rounded-xl border-2 transition-all duration-200 ${
+                      keyboardConfig.switch_color === color.value
+                        ? 'border-white scale-110'
+                        : 'border-slate-600 hover:border-slate-400 hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                  >
+                    <span className="sr-only">{color.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Fixed Bottom Actions */}
+          <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setCurrentPage('builder')}
+                className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200"
+              >
+                Back
+              </button>
+              <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200">
+                Add to Cart - $399
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return null
 }

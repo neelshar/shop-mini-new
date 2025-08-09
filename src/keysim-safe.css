@@ -1,0 +1,31 @@
+/* Safe CSS overrides for KeySim to prevent CSP font loading errors */
+
+/* Override any @font-face rules that might load base64 fonts */
+@font-face {
+  font-family: 'fallback-sans';
+  src: local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'), local('Segoe UI'), local('Arial');
+  font-display: swap;
+}
+
+/* Ensure all text elements use safe fonts */
+* {
+  font-family: 'fallback-sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+}
+
+/* Prevent any base64 font loading */
+@font-face {
+  src: none !important;
+}
+
+/* Override specific font families that might cause issues */
+.font-problematic,
+canvas + div,
+[style*="font-family"] {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+}
+
+/* Hide any font loading indicators */
+.font-loading,
+.webfont-loading {
+  display: none !important;
+}
