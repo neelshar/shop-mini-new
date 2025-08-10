@@ -208,8 +208,8 @@ export const keyTexture = (opts) => {
     canvas: { width: canvas.width, height: canvas.height }
   });
   
-  // Draw text with excellent contrast on blue
-  ctx.fillStyle = '#ffffff'; // Bright white text on blue background for maximum visibility
+  // Draw text with black color on blue background
+  ctx.fillStyle = '#000000'; // Black text on blue background
   
   if (mainChar && mainChar.trim().length > 0) {
     console.log('🔤 Drawing FLIPPED character:', mainChar, 'for key:', key);
