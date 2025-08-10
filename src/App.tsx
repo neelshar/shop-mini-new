@@ -268,7 +268,7 @@ export function App() {
               
               {/* Premium Button */}
               <motion.button
-                onClick={() => setCurrentPage('builder')}
+                onClick={() => setCurrentPage('preferences')}
                 className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white font-bold px-16 py-5 text-lg rounded-2xl overflow-hidden w-full backdrop-blur-sm"
                 whileHover={{ 
                   scale: 1.01,
