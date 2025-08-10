@@ -1043,7 +1043,7 @@ export function App() {
           </div>
 
           {/* AI-Powered Keyboard Sound System */}
-          <div className="mb-8">
+          <div className="mb-8 hidden">
             <MultiProfileKeyboardSounds 
               compactMode={true}
               enableAISelector={false} // Disabled since we have auto-matching above
