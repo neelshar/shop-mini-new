@@ -122,117 +122,148 @@ export function App() {
     console.log('🔍 === SCENE DEBUG END ===')
   }
 
-  // COMPLETELY REVAMPED COLOR CHANGER
+  // INVESTIGATION METHOD: Delayed Updates + Timing Analysis
   const updateCaseColor = (newColor: string) => {
-    console.log('🎨 === COLOR CHANGE START ===', newColor)
-    
-    // First, debug what we have
-    debugScene()
+    console.log('🔍 INVESTIGATING TIMING ISSUE - Default changed to green but button doesn\'t work')
+    console.log('Target color:', newColor)
     
     // Update React state
     setKeyboardConfig(prev => ({ ...prev, case_color: newColor }))
     
-    let colorChanged = false
-    const THREE = (window as any).THREE
+    // Save to localStorage immediately 
+    localStorage.setItem('keyboardCaseColor', newColor)
+    console.log('💾 Saved to localStorage immediately')
     
-    if (!THREE) {
-      console.error('❌ THREE.js not available!')
-      return
-    }
+    // Try immediate update
+    console.log('⚡ ATTEMPT 1: Immediate update...')
+    tryUpdateCase(newColor, 'immediate')
     
-    // Method 1: Update via caseManager
+    // Try after 500ms delay
+    setTimeout(() => {
+      console.log('⏱️ ATTEMPT 2: After 500ms delay...')
+      tryUpdateCase(newColor, '500ms delay')
+    }, 500)
+    
+    // Try after 1 second delay
+    setTimeout(() => {
+      console.log('⏳ ATTEMPT 3: After 1 second delay...')
+      tryUpdateCase(newColor, '1s delay')
+    }, 1000)
+    
+    // Try after 2 second delay 
+    setTimeout(() => {
+      console.log('🕐 ATTEMPT 4: After 2 second delay...')
+      tryUpdateCase(newColor, '2s delay')
+    }, 2000)
+    
+    // Check what's available at different times
+    console.log('📊 TIMING ANALYSIS:')
+    console.log('Time 0ms - Available objects:', {
+      scene: !!(window as any).scene,
+      caseManager: !!(window as any).caseManager,
+      renderer: !!(window as any).renderer
+    })
+    
+    setTimeout(() => {
+      console.log('Time 500ms - Available objects:', {
+        scene: !!(window as any).scene,
+        caseManager: !!(window as any).caseManager,
+        renderer: !!(window as any).renderer,
+        caseManagerHasCase: !!((window as any).caseManager?.case),
+        sceneChildrenCount: (window as any).scene?.children?.length || 0
+      })
+    }, 500)
+    
+    setTimeout(() => {
+      console.log('Time 1000ms - Available objects:', {
+        scene: !!(window as any).scene,
+        caseManager: !!(window as any).caseManager,
+        renderer: !!(window as any).renderer,
+        caseManagerHasCase: !!((window as any).caseManager?.case),
+        sceneChildrenCount: (window as any).scene?.children?.length || 0
+      })
+    }, 1000)
+  }
+  
+  const tryUpdateCase = (newColor: string, timing: string) => {
+    console.log(`🎯 ${timing} - Trying case update...`)
+    
+    let updatesApplied = 0
+    
+    // Method 1: caseManager approach
     if ((window as any).caseManager) {
       const caseManager = (window as any).caseManager
-      console.log('🔧 Updating via caseManager...')
+      console.log(`  ${timing} - caseManager found:`, {
+        hasCase: !!caseManager.case,
+        currentColor: caseManager.color,
+        hasUpdateMethod: typeof caseManager.updateCaseMaterial === 'function'
+      })
       
-      // Update the manager's color
-      caseManager.color = newColor
-      
-      // Update direct case object
-      if (caseManager.case && caseManager.case.material) {
-        console.log('🎯 Found caseManager.case, updating material...')
-        
-        // Handle both single material and material array
-        if (Array.isArray(caseManager.case.material)) {
-          caseManager.case.material.forEach((mat: any, i: number) => {
-            console.log(`  Updating material [${i}]:`, mat.constructor.name)
-            mat.color.setHex(parseInt(newColor.replace('#', '0x')))
-            mat.needsUpdate = true
-          })
-        } else {
-          console.log('  Updating single material:', caseManager.case.material.constructor.name)
-          caseManager.case.material.color.setHex(parseInt(newColor.replace('#', '0x')))
-          caseManager.case.material.needsUpdate = true
+      try {
+        caseManager.color = newColor
+        if (caseManager.updateCaseMaterial) {
+          caseManager.updateCaseMaterial(newColor)
+          updatesApplied++
+          console.log(`  ✅ ${timing} - caseManager.updateCaseMaterial called`)
         }
-        colorChanged = true
-      }
-      
-      // Update all children in the group
-      if (caseManager.group && caseManager.group.children) {
-        console.log('🔧 Updating group children...')
-        caseManager.group.children.forEach((child: any, i: number) => {
-          if (child.material) {
-            console.log(`  Updating child [${i}] ${child.name}:`, child.material.constructor.name)
-            
-            if (Array.isArray(child.material)) {
-              child.material.forEach((mat: any) => {
-                mat.color.setHex(parseInt(newColor.replace('#', '0x')))
-                mat.needsUpdate = true
-              })
-            } else {
-              child.material.color.setHex(parseInt(newColor.replace('#', '0x')))
-              child.material.needsUpdate = true
-            }
-            colorChanged = true
-          }
-        })
+      } catch (error) {
+        console.log(`  ❌ ${timing} - caseManager update failed:`, error)
       }
     }
     
-    // Method 2: Update via scene traversal
+    // Method 2: Scene traversal
     if ((window as any).scene) {
       const scene = (window as any).scene
-      console.log('🔧 Updating via scene traversal...')
+      let sceneUpdates = 0
       
       scene.traverse((object: any) => {
+        // Look for any non-key mesh objects
         if (object.material && object.type === 'Mesh') {
-          // Check if this looks like a case object
-          const isCase = object.name === 'CASE' || 
-                        object.parent?.name === 'CASE' ||
-                        (object.geometry && object.material)
+          const isKey = object.name?.toLowerCase().includes('key') || 
+                       object.parent?.name?.toLowerCase().includes('key')
           
-          if (isCase) {
-            console.log('🎯 Updating scene object:', object.name || 'unnamed', object.material.constructor.name)
-            
-            if (Array.isArray(object.material)) {
-              object.material.forEach((mat: any) => {
-                mat.color.setHex(parseInt(newColor.replace('#', '0x')))
-                mat.needsUpdate = true
-              })
-            } else {
-              object.material.color.setHex(parseInt(newColor.replace('#', '0x')))
-              object.material.needsUpdate = true
+          if (!isKey) {
+            try {
+              if (Array.isArray(object.material)) {
+                object.material.forEach((mat: any) => {
+                  if (mat.color) {
+                    mat.color.setHex(parseInt(newColor.replace('#', '0x')))
+                    mat.needsUpdate = true
+                    sceneUpdates++
+                  }
+                })
+              } else if (object.material.color) {
+                object.material.color.setHex(parseInt(newColor.replace('#', '0x')))
+                object.material.needsUpdate = true
+                sceneUpdates++
+              }
+            } catch (error) {
+              // Silent failure for this timing test
             }
-            colorChanged = true
           }
         }
       })
+      
+      console.log(`  ${timing} - Scene traversal: ${sceneUpdates} materials updated`)
+      updatesApplied += sceneUpdates
     }
     
-    // Method 3: Force re-render
+    // Method 3: Force render
     if ((window as any).renderer && (window as any).scene && (window as any).camera) {
-      console.log('🔧 Forcing render...')
-      const renderer = (window as any).renderer
-      const scene = (window as any).scene
-      const camera = (window as any).camera
-      renderer.render(scene, camera)
+      try {
+        const renderer = (window as any).renderer
+        const scene = (window as any).scene  
+        const camera = (window as any).camera
+        renderer.render(scene, camera)
+        console.log(`  ✅ ${timing} - Forced render`)
+      } catch (error) {
+        console.log(`  ❌ ${timing} - Render failed:`, error)
+      }
     }
     
-    console.log('🎨 === COLOR CHANGE END ===', colorChanged ? '✅ SUCCESS' : '❌ FAILED')
+    console.log(`  📊 ${timing} - Total updates applied: ${updatesApplied}`)
     
-    if (!colorChanged) {
-      console.error('❌ NO MATERIALS WERE UPDATED! Check the debug output above.')
-    }
+    return updatesApplied > 0
   }
 
   useEffect(() => {
@@ -988,26 +1019,49 @@ export function App() {
     ]
     
     const updateKeycapColor = (newColor: string) => {
-      console.log('🎨 UPDATING KEYCAP COLOR TO:', newColor)
+      console.log('🎨 Updating keycap color to:', newColor)
+      
+      // Update React state
       setKeyboardConfig(prev => ({ ...prev, keycap_color: newColor }))
       
-      // Update keycaps in the 3D scene if possible
-      if ((window as any).THREE && (window as any).scene) {
+      // Simple approach: Try to find and update key materials directly
+      if ((window as any).scene) {
         const scene = (window as any).scene
+        let keysUpdated = 0
+        
         scene.traverse((object: any) => {
-          if (object.material && (object.name?.includes('KEY') || object.name?.includes('KEYCAP'))) {
-            console.log('🎯 Updating keycap object:', object.name)
-            if (Array.isArray(object.material)) {
-              object.material.forEach((mat: any) => {
-                mat.color.setHex(parseInt(newColor.replace('#', '0x')))
-                mat.needsUpdate = true
-              })
-            } else {
-              object.material.color.setHex(parseInt(newColor.replace('#', '0x')))
-              object.material.needsUpdate = true
+          // Look for key objects more broadly
+          if (object.material && object.type === 'Mesh') {
+            const isKey = object.name?.toLowerCase().includes('key') || 
+                         object.parent?.name?.toLowerCase().includes('key') ||
+                         object.userData?.isKey === true
+            
+            if (isKey) {
+              console.log('🔑 Updating key:', object.name)
+              if (Array.isArray(object.material)) {
+                object.material.forEach((mat: any) => {
+                  mat.color.setHex(parseInt(newColor.replace('#', '0x')))
+                  mat.needsUpdate = true
+                })
+              } else {
+                object.material.color.setHex(parseInt(newColor.replace('#', '0x')))
+                object.material.needsUpdate = true
+              }
+              keysUpdated++
             }
           }
         })
+        
+        console.log(`✅ Updated ${keysUpdated} key objects`)
+        
+        // Force re-render
+        if ((window as any).renderer && (window as any).camera) {
+          const renderer = (window as any).renderer
+          const camera = (window as any).camera
+          renderer.render(scene, camera)
+        }
+      } else {
+        console.error('❌ Scene not available!')
       }
     }
 
