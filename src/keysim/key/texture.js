@@ -158,12 +158,12 @@ export const keyTexture = (opts) => {
   ctx.scale(1, -1); // Flip Y axis
   ctx.translate(0, -canvas.height); // Move origin back to top-left
   
-  // First, fill the ENTIRE canvas with bright color so we know texture is applied
-  ctx.fillStyle = '#00ff00'; // BRIGHT GREEN background for visibility
+  // Beautiful blue keycap background with excellent visibility
+  ctx.fillStyle = '#4a90e2'; // Clear blue background
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // Add bright border
-  ctx.strokeStyle = '#ff0000'; // RED border
+  // Darker blue border for definition
+  ctx.strokeStyle = '#2c5aa0'; // Darker blue border
   ctx.lineWidth = 8;
   ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
   
@@ -208,8 +208,8 @@ export const keyTexture = (opts) => {
     canvas: { width: canvas.width, height: canvas.height }
   });
   
-  // Draw text with high contrast
-  ctx.fillStyle = '#000000'; // BLACK text on green background for maximum contrast
+  // Draw text with excellent contrast on blue
+  ctx.fillStyle = '#ffffff'; // Bright white text on blue background for maximum visibility
   
   if (mainChar && mainChar.trim().length > 0) {
     console.log('🔤 Drawing FLIPPED character:', mainChar, 'for key:', key);
@@ -219,8 +219,8 @@ export const keyTexture = (opts) => {
     ctx.fillText('X', canvas.width / 2, canvas.height / 2);
   }
   
-  // Add a bright dot for extra visibility
-  ctx.fillStyle = '#ff00ff'; // MAGENTA dot
+  // Add a subtle accent dot
+  ctx.fillStyle = '#87ceeb'; // Light blue accent dot
   ctx.beginPath();
   ctx.arc(canvas.width - 20, 20, 10, 0, 2 * Math.PI);
   ctx.fill();

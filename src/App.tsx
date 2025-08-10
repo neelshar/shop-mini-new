@@ -25,8 +25,8 @@ export function App() {
     case: 'aluminum',
     plate: 'aluminum',
     stabilizers: 'durock',
-    case_color: '#6b7280', // Default grey
-    keycap_color: '#9ca3af', // Default grey
+    case_color: '#eeeeee', // Clean white case like original KeySim
+    keycap_color: '#4a90e2', // Beautiful blue to match keycap textures
     switch_color: '#ffa726' // Default tactile orange
   })
   const [isLoaded, setIsLoaded] = useState(false)
