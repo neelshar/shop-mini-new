@@ -3,6 +3,18 @@ import { store } from "../store";
 import holes from "./holes";
 
 export default (layout, color) => {
+  console.log('🔧 case_2.js called with layout:', layout, 'color:', color);
+  
+  if (!layout) {
+    console.error('❌ CRITICAL: No layout provided to case_2.js!');
+    return null;
+  }
+  
+  if (!layout.width || !layout.height) {
+    console.error('❌ CRITICAL: Layout missing width/height!', layout);
+    return null;
+  }
+  
   color = color || "#cccccc";
   let cornerRadius = 0;
   let bevel = 0.04;

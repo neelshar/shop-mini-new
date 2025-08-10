@@ -69,6 +69,9 @@ export class Key {
       KEY_MATERIAL_STATES.DEFAULT,
       this.is_iso_enter
     );
+    
+    console.log('🔧 Key created:', this.code, 'initial setup complete');
+    // Initial color will be applied by the material system automatically
 
     this.cap.castShadow = false;
     this.cap.receiveShadow = false;
@@ -191,6 +194,7 @@ export class Key {
   }
   updateColors(textureOnly, includeActiveMaterial) {
     this.colorway = ColorUtil.colorway;
+    console.log('🎨 updateColors called for key:', this.code, 'materialOptions:', this.materialOptions);
     updateMaterials(this.cap, this.materialOptions, textureOnly);
     if (!includeActiveMaterial) return;
     updateActiveMaterials(this.cap, this.materialOptions, textureOnly);

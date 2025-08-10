@@ -69,14 +69,25 @@ const setMaterialIndexes = (mesh, side, top, isoent) => {
 //generate top and side materials for a single color set
 const getMaterialSet = (opts, offset) => {
   let key = `mat${opts.background}`;
+  let textureKey = `tex${opts.code}_${opts.legend}_${opts.background}`;
 
-  let legendTexture = keyTexture(opts);
-  let top = new THREE.MeshLambertMaterial({
-    map: legendTexture,
-    lightMap: lightMap,
-    lightMapIntensity: 0,
-  });
-  top.map.minFilter = THREE.LinearFilter;
+  // Check if we already have this texture to prevent recreation
+  if (!computed_materials[textureKey]) {
+    console.log('🎨 Creating NEW texture for', opts.code);
+    let legendTexture = keyTexture(opts);
+    let top = new THREE.MeshLambertMaterial({
+      map: legendTexture,
+      lightMap: lightMap,
+      lightMapIntensity: 0,
+    });
+    top.map.minFilter = THREE.LinearFilter;
+    computed_materials[textureKey] = top;
+    console.log('✅ Cached new texture material for', opts.code);
+  } else {
+    console.log('♻️ Reusing existing texture for', opts.code);
+  }
+
+  let top = computed_materials[textureKey];
 
   if (computed_materials[key]) {
     return [computed_materials[key].clone(), top];
@@ -102,10 +113,22 @@ export const keyMaterials = (opts) => {
 };
 
 export const updateMaterials = (mesh, opts) => {
+  console.log('🔧 updateMaterials called with opts:', opts);
   let base = getMaterialSet(opts);
   mesh.material[2] = base[0];
   mesh.material[3] = base[1];
   setKeyMaterialState(mesh, KEY_MATERIAL_STATES.DEFAULT, opts.isIsoEnt);
+  
+  // Force material updates
+  mesh.material[2].needsUpdate = true;
+  mesh.material[3].needsUpdate = true;
+  mesh.geometry.groupsNeedUpdate = true;
+  
+  console.log('✅ updateMaterials completed, material[3] (top):', mesh.material[3]);
+  console.log('🎨 Top material has map:', mesh.material[3].map ? 'YES' : 'NO');
+  if (mesh.material[3].map) {
+    console.log('🖼️ Texture size:', mesh.material[3].map.image?.width, 'x', mesh.material[3].map.image?.height);
+  }
 };
 
 export const updateActiveMaterials = (mesh, opts) => {

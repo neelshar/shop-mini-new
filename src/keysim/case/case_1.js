@@ -3,6 +3,18 @@ import { store } from "../store";
 import holes from "./holes";
 
 export default (layout, color) => {
+  console.log('🔧 case_1.js called with layout:', layout, 'color:', color);
+  
+  if (!layout) {
+    console.error('❌ CRITICAL: No layout provided to case_1.js!');
+    return null;
+  }
+  
+  if (!layout.width || !layout.height) {
+    console.error('❌ CRITICAL: Layout missing width/height!', layout);
+    return null;
+  }
+  
   color = color || "#cccccc";
   let cornerRadius = 0.5;
   let bevel = 0.05;
@@ -13,6 +25,9 @@ export default (layout, color) => {
   let size = store.getState().case.layout;
   let geometry;
   let mesh;
+  
+  console.log('📏 Case dimensions: width=', width, 'depth=', depth, 'height=', height);
+  console.log('🗂️ Store state:', store.getState());
 
   //create geometry
   let shape = new THREE.Shape();
@@ -28,18 +43,26 @@ export default (layout, color) => {
   shape.quadraticCurveTo(0, depth, 0, depth - cornerRadius);
   shape.lineTo(0, cornerRadius);
 
-  shape.holes = holes(size, layout, bezel);
+  try {
+    shape.holes = holes(size, layout, bezel);
+    console.log('🕳️ Shape holes created:', shape.holes?.length || 0, 'holes');
 
-  let extrudeOptions = {
-    depth: height,
-    steps: 1,
-    bevelSegments: 1,
-    bevelEnabled: true,
-    bevelSize: bevel,
-    bevelThickness: bevel,
-  };
+    let extrudeOptions = {
+      depth: height,
+      steps: 1,
+      bevelSegments: 1,
+      bevelEnabled: true,
+      bevelSize: bevel,
+      bevelThickness: bevel,
+    };
 
-  geometry = new THREE.ExtrudeGeometry(shape, extrudeOptions);
+    console.log('🔨 Creating ExtrudeGeometry with options:', extrudeOptions);
+    geometry = new THREE.ExtrudeGeometry(shape, extrudeOptions);
+    console.log('✅ ExtrudeGeometry created successfully');
+  } catch (error) {
+    console.error('❌ Error creating case geometry:', error);
+    throw error;
+  }
   
   // Handle BufferGeometry compatibility
   if (geometry.isBufferGeometry) {
@@ -87,5 +110,7 @@ export default (layout, color) => {
   mesh.rotation.x = Math.PI / 2;
   mesh.position.set(-bezel, 0, -bezel);
 
+  console.log('✅ case_1.js: Created mesh with name:', mesh.name, 'position:', mesh.position, 'material color:', color);
+  
   return mesh;
 };

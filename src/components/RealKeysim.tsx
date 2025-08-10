@@ -20,11 +20,17 @@ export function RealKeysim({
   const keysimInitialized = useRef(false)
 
   useEffect(() => {
-    if (!containerRef.current || keysimInitialized.current) return
-
     const initKeysim = async () => {
+      if (!containerRef.current || keysimInitialized.current) {
+        console.log('🚫 Skipping KeySim init - already initialized or no container')
+        return
+      }
+
       try {
         console.log('🚀 Initializing REAL KeySim from GitHub...')
+        
+        // Clear container first to prevent conflicts
+        containerRef.current.innerHTML = ''
         
         // Update store with colors and ensure case is visible
         store.updateState('case', {
@@ -58,23 +64,33 @@ export function RealKeysim({
         
         if (KeysimApp.default && containerRef.current) {
           // Initialize KeySim directly in our container
-          await KeysimApp.default(containerRef.current)
+          const keysimInstance = await KeysimApp.default(containerRef.current)
           keysimInitialized.current = true
           console.log('✅ Real KeySim loaded successfully!')
         }
       } catch (error) {
         console.error('Failed to load KeySim:', error)
-        // Keep retrying - we want the real thing!
-        setTimeout(initKeysim, 2000)
+        // Don't retry on this specific error to prevent loop
+        if (!error.message.includes('Can\'t find variable: l')) {
+          setTimeout(initKeysim, 3000)
+        }
       }
     }
 
-    // Wait for DOM to be ready
-    setTimeout(initKeysim, 100)
+    // Only initialize once
+    const timeoutId = setTimeout(initKeysim, 100)
 
-    // No cleanup - we want KeySim to stay!
+    // Cleanup function
     return () => {
-      // Don't clean up KeySim - let it persist
+      clearTimeout(timeoutId)
+      if (containerRef.current) {
+        // Clear container but don't destroy WebGL context aggressively
+        try {
+          containerRef.current.innerHTML = ''
+        } catch (e) {
+          console.log('Cleanup completed')
+        }
+      }
     }
   }, [])
 

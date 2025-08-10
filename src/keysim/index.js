@@ -34,7 +34,11 @@ export default (element) => {
     // Force a render to make sure everything appears
     setTimeout(() => {
       ThreeApp.render();
-    }, 100);
+      
+      // Force update key textures to show legends
+      console.log('🔤 Forcing key legend update...');
+      document.dispatchEvent(new CustomEvent('force_key_material_update'));
+    }, 200);
     
     console.log('🎹 KeySim fully loaded with case and keys!');
     

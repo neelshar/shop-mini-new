@@ -10,6 +10,12 @@ const initial_settings = {
     style: "CASE_1", // Use CASE_1 style (visible case style)
     primaryColor: "#eeeeee", // Default case color
     material: "brushed" // Use brushed material like defaults
+  },
+  keys: {
+    ...defaultSettings.keys,
+    legendPrimaryStyle: "cherry", // Make sure legend style is set
+    legendSecondaryStyle: "",
+    visible: true
   }
 }
 

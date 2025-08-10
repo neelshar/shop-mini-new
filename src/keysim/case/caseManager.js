@@ -93,7 +93,21 @@ export default class CaseManager {
     this.angle = 6;
     this.r = 0.5;
     
-    console.log('🏗️ Initializing CaseManager with layout:', this.layoutName, 'style:', this.style);
+    console.log('🏗️ Initializing CaseManager with:', {
+      layoutName: this.layoutName,
+      style: this.style,
+      color: this.color,
+      layoutExists: !!this.layout,
+      layoutWidth: this.layout?.width,
+      layoutHeight: this.layout?.height,
+      availableLayouts: Object.keys(LAYOUTS),
+      scene: this.scene ? 'Scene exists' : 'NO SCENE!'
+    });
+    
+    if (!this.layout) {
+      console.error('❌ CRITICAL: Layout not found for layoutName:', this.layoutName);
+      console.log('Available layouts:', Object.keys(LAYOUTS));
+    }
     
     this.setup();
   }
@@ -109,21 +123,76 @@ export default class CaseManager {
   }
 
   setup() {
+    console.log('🔧 CaseManager.setup() starting...');
+    
     this.group = new THREE.Group();
     this.group.name = "CASE";
+    console.log('✅ Group created');
+    
     this.loader = new TextureLoader();
-    this.loadTextures();
-    this.createEnvCubeMap();
-    this.createCaseShadow();
-    this.createBadge();
-    this.createPlate();
-    this.createCase();
+    console.log('✅ TextureLoader created');
+    
+    try {
+      console.log('🔧 Loading textures...');
+      this.loadTextures();
+      console.log('✅ Textures loaded');
+    } catch (e) {
+      console.warn('⚠️ Texture loading failed:', e);
+    }
+    
+    try {
+      console.log('🔧 Creating environment cube map...');
+      this.createEnvCubeMap();
+      console.log('✅ Environment cube map created');
+    } catch (e) {
+      console.warn('⚠️ Environment cube map failed:', e);
+    }
+    
+    try {
+      console.log('🔧 Creating case shadow...');
+      this.createCaseShadow();
+      console.log('✅ Case shadow created');
+    } catch (e) {
+      console.warn('⚠️ Case shadow failed:', e);
+    }
+    
+    try {
+      console.log('🔧 Creating badge...');
+      this.createBadge();
+      console.log('✅ Badge created');
+    } catch (e) {
+      console.warn('⚠️ Badge creation failed:', e);
+    }
+    
+    try {
+      console.log('🔧 Creating plate...');
+      this.createPlate();
+      console.log('✅ Plate created');
+    } catch (e) {
+      console.warn('⚠️ Plate creation failed:', e);
+    }
+    
+    // THIS IS THE CRITICAL PART - THE ACTUAL CASE
+    try {
+      console.log('🔧 Creating CASE (the main keyboard case)...');
+      this.createCase();
+      console.log('✅ CASE created successfully');
+    } catch (e) {
+      console.error('❌ CRITICAL: Case creation failed:', e);
+      console.error('Error stack:', e.stack);
+    }
 
     //case global position (shadow is out side this.group)
+    console.log('🔧 Positioning case group...');
     this.position();
-    this.scene.add(this.group);
+    console.log('✅ Case positioned');
     
-    console.log('🏠 Case setup complete! Group added to scene:', this.group);
+    console.log('🔧 Adding group to scene...');
+    this.scene.add(this.group);
+    console.log('✅ Group added to scene');
+    
+    console.log('🏠 Case setup complete! Group children count:', this.group.children.length);
+    console.log('🏠 Group children:', this.group.children.map(child => child.name || child.type));
 
     subscribe("case.primaryColor", (state) => {
       this.color = state.case.primaryColor;
@@ -259,18 +328,51 @@ export default class CaseManager {
 
   getCaseMesh(layout = this.layout, style = this.style) {
     let mesh;
+    console.log('🔍 Creating case mesh with style:', JSON.stringify(style), 'layout:', layout?.width, 'x', layout?.height, 'color:', this.color);
+    console.log('🔍 Style comparison: style === "CASE_1"?', style === "CASE_1", 'style === "CASE_2"?', style === "CASE_2");
+    
     if (style === "CASE_1") {
+      console.log('🏗️ Using CASE_1 style');
       mesh = case_1(layout, this.color);
+    } else if (style === "CASE_2") {
+      console.log('🏗️ Using CASE_2 style');
+      mesh = case_2(layout, this.color);
     } else {
+      console.log('🏗️ Using CASE_2 style (fallback for unknown style)');
       mesh = case_2(layout, this.color);
     }
+    
+    console.log('✅ Case mesh created:', mesh ? mesh.name : 'null', 'mesh object:', mesh);
     return mesh;
   }
 
   createCase() {
-    this.case = this.getCaseMesh();
-    this.updateCaseMaterial();
-    this.group.add(this.case);
+    console.log('🏠 Creating case with current style:', this.style);
+    
+    try {
+      this.case = this.getCaseMesh();
+      if (this.case) {
+        console.log('🔧 About to update case material...');
+        this.updateCaseMaterial();
+        console.log('🔧 About to add case to group...');
+        this.group.add(this.case);
+        console.log('✅ Case added to group! Case mesh:', this.case.name, 'Position:', this.case.position);
+        console.log('✅ Group children count after adding case:', this.group.children.length);
+        
+        // Set proper case color (gray)
+        this.case.material = new THREE.MeshBasicMaterial({ 
+          color: '#eeeeee', // Nice gray color like the real KeySim
+          wireframe: false,
+          transparent: false
+        });
+        
+      } else {
+        console.error('❌ Failed to create case mesh!');
+      }
+    } catch (error) {
+      console.error('❌ ERROR in createCase():', error);
+      console.error('Error stack:', error.stack);
+    }
   }
 
   updateCaseGeometry() {

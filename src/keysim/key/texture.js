@@ -7,6 +7,13 @@ const MIP_COUNT = 0;
 
 //genertates a texture with canvas for top of key
 export const keyTexture = (opts) => {
+  console.log('🎨 keyTexture called for key:', opts.code, 'legend:', opts.legend, 'opts:', opts);
+  
+  // Texture creation confirmed working
+  if (opts.code === 'KC_Q') {
+    console.log('✅ Q key texture creation confirmed');
+  }
+  
   let w = opts.w;
   let h = opts.h;
   let legend = opts.legend;
@@ -34,6 +41,11 @@ export const keyTexture = (opts) => {
   //draw base color
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // DEBUGGING: Add a bright colored border to see if texture is being applied
+  ctx.strokeStyle = '#ff00ff'; // Bright magenta border for debugging
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
 
   //draw gradient to simulate sculpting
   let gradient;
@@ -74,56 +86,75 @@ export const keyTexture = (opts) => {
   shineBottom.addColorStop(0.95, `rgba(255,255,255,${0 * shineOpacity})`);
   shineBottom.addColorStop(1, `rgba(255,255,255,${0 * shineOpacity})`);
 
-  //draw gradients
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // TEMPORARILY DISABLE GRADIENTS FOR DEBUGGING
+  // //draw gradients
+  // ctx.fillStyle = gradient;
+  // ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = shineRight;
-  ctx.fillRect(0, canvas.height * 0.97, canvas.width, canvas.height);
+  // ctx.fillStyle = shineRight;
+  // ctx.fillRect(0, canvas.height * 0.97, canvas.width, canvas.height);
 
-  ctx.fillStyle = shineBottom;
-  ctx.fillRect(canvas.width * highlightRatio, 0, canvas.width, canvas.height);
+  // ctx.fillStyle = shineBottom;
+  // ctx.fillRect(canvas.width * highlightRatio, 0, canvas.width, canvas.height);
 
-  let l = LEGENDS[legend];
-  let mainChar = l?.chars[key] || "";
+  // SIMPLE CHARACTER MAPPING - NO CUSTOM FONTS
+  // Create a simple mapping from key codes to actual characters
+  const SIMPLE_CHAR_MAP = {
+    'KC_A': 'A', 'KC_B': 'B', 'KC_C': 'C', 'KC_D': 'D', 'KC_E': 'E', 'KC_F': 'F',
+    'KC_G': 'G', 'KC_H': 'H', 'KC_I': 'I', 'KC_J': 'J', 'KC_K': 'K', 'KC_L': 'L',
+    'KC_M': 'M', 'KC_N': 'N', 'KC_O': 'O', 'KC_P': 'P', 'KC_Q': 'Q', 'KC_R': 'R',
+    'KC_S': 'S', 'KC_T': 'T', 'KC_U': 'U', 'KC_V': 'V', 'KC_W': 'W', 'KC_X': 'X',
+    'KC_Y': 'Y', 'KC_Z': 'Z',
+    'KC_1': '1', 'KC_2': '2', 'KC_3': '3', 'KC_4': '4', 'KC_5': '5',
+    'KC_6': '6', 'KC_7': '7', 'KC_8': '8', 'KC_9': '9', 'KC_0': '0',
+    'KC_ENT': '⏎', 'KC_ESC': 'Esc', 'KC_BSPC': '⌫', 'KC_TAB': 'Tab',
+    'KC_SPC': '', 'KC_MINS': '-', 'KC_EQL': '=', 'KC_LBRC': '[', 'KC_RBRC': ']',
+    'KC_BSLS': '\\', 'KC_SCLN': ';', 'KC_QUOT': "'", 'KC_GRV': '`',
+    'KC_COMM': ',', 'KC_DOT': '.', 'KC_SLSH': '/', 'KC_CAPS': 'Caps',
+    'KC_F1': 'F1', 'KC_F2': 'F2', 'KC_F3': 'F3', 'KC_F4': 'F4',
+    'KC_F5': 'F5', 'KC_F6': 'F6', 'KC_F7': 'F7', 'KC_F8': 'F8',
+    'KC_F9': 'F9', 'KC_F10': 'F10', 'KC_F11': 'F11', 'KC_F12': 'F12',
+    'KC_LSFT': 'Shift', 'KC_RSFT': 'Shift', 'KC_LCTL': 'Ctrl', 'KC_RCTL': 'Ctrl',
+    'KC_LALT': 'Alt', 'KC_RALT': 'Alt', 'KC_LGUI': 'Super', 'KC_RGUI': 'Super'
+  };
+  
+  // Get the simple character
+  let mainChar = SIMPLE_CHAR_MAP[key] || key.replace('KC_', '');
+  
+  console.log('🔤 Simple character mapping:', {
+    key,
+    mainChar,
+    legend,
+    available: !!SIMPLE_CHAR_MAP[key]
+  });
 
-  // 1u bs and enter
-  if (key === "KC_BSPC" && w <= 1) {
-    mainChar = l?.chars["KC_BSISO"];
-  }
-  if ((key === "KC_ENT" && w <= 1) || isIsoEnter) {
-    mainChar = l?.chars["KC_ENISO"];
-  }
-
-  let modWord = !l.encoded && mainChar.length > 1; //mods use multi chacter words instead of symbols (sa)
-  let subChar = SUBS[sublegend]?.chars[key] || "";
-
-  //convert to unicode value if encoded for custom fonts
-  mainChar =
-    l.encoded && mainChar.length > 1
-      ? String.fromCharCode(parseInt(mainChar, 16))
-      : mainChar;
-
-  //font size
-  let fontScaler = 1;
-  if (mainChar["top"]) fontScaler = 1 / 2; //number keys 2 characters stacked
-  if (!mainChar["top"] && modWord) fontScaler = 1 / 4; // keys with full words for modifer text i.e. "Enter", "Alt", "Home"
-  let fontSize = l.fontsize * (fontScaler + 0.25);
-
-  //set font style
-  if (modWord) {
-    ctx.font = `700 ${fontSize}px ${l.fontFamily}`;
-  } else {
-    ctx.font = `${fontSize}px ${l.fontFamily}`;
-  }
-  ctx.fillStyle = fg;
-
-  if (l.centered) {
-    ctx.textAlign = "center";
-    l.offsetX = (w * pxPerU) / 2;
-  } else {
-    ctx.textAlign = "left";
-  }
+  // SIMPLE FONT SETUP
+  let fontSize = mainChar.length > 3 ? 24 : 48; // Smaller font for longer text like "Shift"
+  let fontFamily = 'Arial, sans-serif'; // Use system font
+  
+  ctx.font = `bold ${fontSize}px ${fontFamily}`;
+  
+  // FORCE WHITE TEXT FOR LEGENDS (override fg color)
+  ctx.fillStyle = '#ffffff'; // Force white legends like in real KeySim
+  
+  // DEBUGGING: Draw a test red dot to see if text drawing works
+  ctx.fillStyle = '#ff0000';
+  ctx.beginPath();
+  ctx.arc(50, 50, 10, 0, 2 * Math.PI);
+  ctx.fill();
+  
+  // Reset to white for text
+  ctx.fillStyle = '#ffffff';
+  
+  console.log('🖋️ Drawing text:', {
+    mainChar,
+    fontSize,
+    font: ctx.font,
+    fillStyle: ctx.fillStyle,
+    fg: fg,
+    bg: bg,
+    canvas: { width: canvas.width, height: canvas.height }
+  });
   let ent_off_x = 0;
   let ent_off_y = 0;
   if (isIsoEnter) {
@@ -131,32 +162,48 @@ export const keyTexture = (opts) => {
     ent_off_y = 6;
   }
 
-  if (mainChar["top"]) {
-    ctx.fillText(mainChar.top, l.offsetX, l.offsetY + l.yOffsetTop);
-    ctx.fillText(mainChar.bottom, l.offsetX, l.offsetY + l.yOffsetBottom);
+  // SIMPLE TEXT DRAWING WITH PROPER ALIGNMENT  
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // Draw test dot for debugging
+  ctx.fillStyle = '#ff0000'; 
+  ctx.fillText('●', canvas.width / 2, canvas.height / 2 - 20);
+  
+  // Draw the actual character in white
+  ctx.fillStyle = '#ffffff';
+  
+  if (mainChar && mainChar.trim().length > 0) {
+    console.log('🔤 Drawing character:', mainChar, 'for key:', key, 'at center:', canvas.width / 2, canvas.height / 2);
+    ctx.fillText(mainChar, canvas.width / 2, canvas.height / 2 + 10);
   } else {
-    ctx.fillText(
-      mainChar,
-      l.offsetX + ent_off_x,
-      l.fontsize + (KeyUtil.isAlpha(key) ? l.offsetY : l.yOffsetMod) + ent_off_y
-    );
+    console.log('🔤 No character found for key:', key, 'drawing fallback');
+    ctx.fillText('?', canvas.width / 2, canvas.height / 2 + 10);
   }
+  
+  console.log('✅ Text drawing completed for key:', key);
 
-  // //sub characters
-  if (sublegend && subChar && l.subsSupported) {
-    let sub = SUBS[sublegend];
-    let multiplier = sub.fontSizeMultiplier * 0.35;
-    ctx.fillStyle = subColor || fg;
-    ctx.font = `bold ${pxPerU * multiplier}px ${sub.fontFamily}`;
-    if (subChar?.top) {
-      ctx.fillText(subChar.top, pxPerU * 0.55, pxPerU * 0.4);
-      ctx.fillText(subChar.bottom, pxPerU * 0.55, pxPerU * 0.8);
-    } else {
-      ctx.fillText(subChar, pxPerU * 0.55, pxPerU * 0.8);
-    }
-  }
+  // Skip sub-characters for now to focus on main legends
 
   texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  texture.flipY = false; // Important for canvas textures
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  
+  console.log('🖼️ Created texture for key:', key, 'texture:', texture, 'canvas size:', canvas.width + 'x' + canvas.height);
+  
+  // Canvas rendering confirmed working - debug canvas removed to save WebGL resources
+  if (key === 'KC_Q') {
+    console.log('🎯 Q KEY CANVAS confirmed working - size:', canvas.width + 'x' + canvas.height);
+  }
+  
+  // For debugging: show the canvas in the browser (optional)
+  if (key === 'KC_Q') {
+    console.log('🎯 DEBUG: Q key canvas for inspection:', canvas);
+    // Uncomment next line to see the canvas in the browser for debugging
+    // document.body.appendChild(canvas);
+  }
 
   if (MIP_COUNT > 0) {
     // texture.mipmaps[0] = canvas;
