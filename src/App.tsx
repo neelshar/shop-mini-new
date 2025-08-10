@@ -120,13 +120,13 @@ export function App() {
         <AnimatedBackground />
         
         {/* Main Content */}
-        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
-          {/* 3D Keyboard Carousel */}
+        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-8">
+          {/* 3D Keyboard Carousel - Smaller and more prominent */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="mb-16"
+            className="mb-8 max-w-4xl w-full"
           >
             <KeyboardCarousel />
           </motion.div>
@@ -136,13 +136,13 @@ export function App() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-center mb-12"
+            className="text-center mb-8 max-w-4xl"
           >
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-4">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
               Design Your Custom Clicks
             </h1>
-            <p className="text-xl text-gray-400 max-w-lg mx-auto">
-              perfect your mechanical keyboard experience
+            <p className="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
+              Perfect your mechanical keyboard experience with our premium components and professional customization
             </p>
           </motion.div>
 
@@ -151,13 +151,13 @@ export function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="text-center mb-16"
+            className="text-center"
           >
             <HolographicButton
               onClick={() => setCurrentPage('builder')}
               variant="primary"
               size="lg"
-              className="px-12 py-4"
+              className="px-16 py-5 text-lg font-semibold"
             >
               Start Building
             </HolographicButton>
