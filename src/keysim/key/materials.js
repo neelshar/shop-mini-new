@@ -1,5 +1,6 @@
 import * as THREE from "../three-compat";
 import { keyTexture } from "./texture";
+import { keyTexturePlain } from "./texture-plain";
 // Removed startup dependency for shop mini compatibility
 import { TextureLoader } from "three/src/loaders/TextureLoader.js";
 import ambiantOcclusionPath from "../../keysim-assets/dist/shadow-key-noise.png";
@@ -15,7 +16,7 @@ const lightMap = loader.load(lightMapPath);
 lightMap.wrapS = THREE.RepeatWrapping;
 lightMap.wrapT = THREE.RepeatWrapping;
 
-var computed_materials = {}; // Cache cleared - will force bright green texture regeneration
+var computed_materials = {}; // FIXED FACE ASSIGNMENT: Top=text(1), Sides=plain(0)
 
 export const KEY_MATERIAL_STATES = {
   DEFAULT: 0,
@@ -45,22 +46,30 @@ const setMaterialIndexes = (mesh, side, top, isoent) => {
     if (index) {
       mesh.geometry.clearGroups();
       
-      // FORCE ALL FACES TO USE MATERIAL INDEX 0 (which has our green texture)
+      // PROPER MATERIAL ASSIGNMENT: Top faces = material 1, Side faces = material 0
       const faceCount = index.count / 3;
       for (let i = 0; i < faceCount; i++) {
-        // ALWAYS use material index 0 (guaranteed to have our green texture)
-        mesh.geometry.addGroup(i * 3, 3, 0);
+        // First 6 faces are the top faces (based on geometry.js order)
+        if (i < threshold) {
+          mesh.geometry.addGroup(i * 3, 3, 1); // Top material (text texture)
+        } else {
+          mesh.geometry.addGroup(i * 3, 3, 0); // Side material (plain texture)
+        }
       }
-      console.log('🟢 FORCED', faceCount, 'faces to use top material for', mesh.name || 'unnamed key');
+      console.log('🎯 ASSIGNED', threshold, 'top faces (material 1), remaining side faces (material 0) for', mesh.name || 'unnamed key');
     }
   } 
   // Handle legacy Geometry
   else if (mesh.geometry.faces) {
-    // FORCE ALL FACES TO USE MATERIAL INDEX 0 (green texture) for legacy geometry too
+    // PROPER MATERIAL ASSIGNMENT for legacy geometry
     mesh.geometry.faces.forEach((f, i) => {
-      f.materialIndex = 0; // ALWAYS use material index 0 (guaranteed to have our green texture)
+      if (i < threshold) {
+        f.materialIndex = 1; // Top material (text texture)
+      } else {
+        f.materialIndex = 0; // Side material (plain texture)
+      }
     });
-    console.log('🟢 FORCED', mesh.geometry.faces.length, 'legacy faces to use top material for', mesh.name || 'unnamed key');
+    console.log('🎯 ASSIGNED', threshold, 'top faces (material 1), remaining side faces (material 0) for', mesh.name || 'unnamed key');
     mesh.geometry.groupsNeedUpdate = true;
   }
 };
@@ -95,30 +104,49 @@ const getMaterialSet = (opts, offset) => {
     console.log('♻️ Reusing existing texture for', opts.code);
   }
 
-  let top = computed_materials[textureKey];
+  let topMaterial = computed_materials[textureKey];
 
-  if (computed_materials[key]) {
-    return [computed_materials[key].clone(), top];
+  // Create side material with plain texture (no text)
+  let sideKey = `side${opts.code}_${opts.background}`;
+  
+  if (!computed_materials[sideKey]) {
+    console.log('🎨 Creating SIDE material (plain texture, no text) for', opts.code);
+    let plainTexture = keyTexturePlain(opts);
+    
+    let sideMaterial = new THREE.MeshBasicMaterial({
+      map: plainTexture,
+      transparent: false,
+      opacity: 1.0,
+    });
+    
+    // Force texture properties
+    sideMaterial.map.minFilter = THREE.LinearFilter;
+    sideMaterial.map.magFilter = THREE.LinearFilter;
+    sideMaterial.map.needsUpdate = true;
+    sideMaterial.needsUpdate = true;
+    
+    computed_materials[sideKey] = sideMaterial;
+    console.log('✅ Side material (plain texture) created for', opts.code);
   }
-  let side = new THREE.MeshStandardMaterial({
-    aoMap: ambiantOcclusionMap,
-    color: opts.background,
-    aoMapIntensity: 0.4,
-    lightMap: lightMap,
-    lightMapIntensity: 0,
+  
+  let sideMaterial = computed_materials[sideKey];
+  
+  console.log('🎯 TWO TEXTURES READY:', {
+    side: 'Plain blue texture (no text)', 
+    top: 'Blue texture + black text'
   });
-  computed_materials[key] = side;
-  return [side, top];
+  
+  return [sideMaterial, topMaterial];
 };
 
 export const keyMaterials = (opts) => {
   let base = getMaterialSet(opts);
-  console.log('🎨 keyMaterials - base materials created for', opts.code);
+  console.log('🎯 FIXED FACE ASSIGNMENT for', opts.code, 'TIMESTAMP:', Date.now());
   
-  // Create all 4 materials but use our green texture material for ALL slots
-  let materials = [base[1], base[1], base[1], base[1]]; // ALL use our green texture material
+  // PROPER ASSIGNMENT: Top face = text texture, All sides = plain texture
+  let materials = [base[0], base[1], base[0], base[0]]; // Sides=plain, Top=text
   
-  console.log('🟢 FORCED all 4 material slots to use green texture material for', opts.code);
+  console.log('🎯 ASSIGNED: Top face gets text, sides get plain texture for', opts.code);
   return materials;
 };
 
@@ -126,11 +154,11 @@ export const updateMaterials = (mesh, opts) => {
   console.log('🔧 updateMaterials called with opts:', opts);
   let base = getMaterialSet(opts);
   
-  // FORCE ALL MATERIAL SLOTS TO USE OUR GREEN TEXTURE MATERIAL
-  mesh.material[0] = base[1]; // Green texture
-  mesh.material[1] = base[1]; // Green texture  
-  mesh.material[2] = base[1]; // Green texture
-  mesh.material[3] = base[1]; // Green texture
+  // PROPER ASSIGNMENT: Top face = text texture, All sides = plain texture
+  mesh.material[0] = base[0]; // Plain texture (side)
+  mesh.material[1] = base[1]; // Text texture (top)
+  mesh.material[2] = base[0]; // Plain texture (side)  
+  mesh.material[3] = base[0]; // Plain texture (side)
   
   setKeyMaterialState(mesh, KEY_MATERIAL_STATES.DEFAULT, opts.isIsoEnt);
   
