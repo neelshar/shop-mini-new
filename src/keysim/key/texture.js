@@ -142,16 +142,6 @@ export const keyTexture = (opts) => {
   
   // Reset to white for text
   ctx.fillStyle = '#ffffff';
-  
-  console.log('🖋️ Drawing text:', {
-    mainChar,
-    fontSize,
-    font: ctx.font,
-    fillStyle: ctx.fillStyle,
-    fg: fg,
-    bg: bg,
-    canvas: { width: canvas.width, height: canvas.height }
-  });
   let ent_off_x = 0;
   let ent_off_y = 0;
   if (isIsoEnter) {
@@ -208,6 +198,15 @@ export const keyTexture = (opts) => {
   
   ctx.font = `bold ${fontSize}px Arial`;
   console.log('🔤 Font size for', mainChar, ':', fontSize + 'px');
+  
+  // Debug font and text info
+  console.log('🖋️ Drawing text:', {
+    mainChar,
+    fontSize,
+    font: ctx.font,
+    fillStyle: ctx.fillStyle,
+    canvas: { width: canvas.width, height: canvas.height }
+  });
   
   // Draw text with high contrast
   ctx.fillStyle = '#000000'; // BLACK text on green background for maximum contrast
