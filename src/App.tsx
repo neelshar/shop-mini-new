@@ -918,6 +918,22 @@ export function App() {
                 ))}
               </div>
             </div>
+
+            {/* Virtual Keyboard for Mobile Testing */}
+            <div className="mt-6">
+              <VirtualKeyboard 
+                onKeyPress={(key) => {
+                  console.log('🎹 App received virtual key press:', key, 'Function available:', !!keyboardSoundFunction);
+                  if (keyboardSoundFunction) {
+                    keyboardSoundFunction(key);
+                  } else {
+                    console.log('❌ No keyboard sound function available');
+                  }
+                }}
+                isAudioEnabled={isAudioEnabled}
+                className="shadow-lg"
+              />
+            </div>
           </div>
 
           {/* Fixed Bottom Actions */}
@@ -1022,7 +1038,7 @@ export function App() {
             {/* Debug Mode Toggle */}
             <button
               onClick={() => setDebugMode(!debugMode)}
-              className="absolute top-4 right-4 bg-red-600/80 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs transition-colors"
+              className="absolute top-4 right-4 bg-red-600/80 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs transition-colors hidden"
               title={debugMode ? "Hide Debug Info" : "Show Debug Info"}
             >
               {debugMode ? "🔧 Debug ON" : "🔧 Debug"}
@@ -1460,6 +1476,7 @@ export function App() {
           isAudioEnabled={isAudioEnabled}
           hasSelectedSwitch={hasSelectedSwitch}
           currentSwitchName={getCurrentSwitchName()}
+          className="hidden"
         />
 
         {/* Simple Cart Summary Modal */}
