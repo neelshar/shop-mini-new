@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { RealKeysim } from './components/RealKeysim'
 import { ComponentSearchModal } from './components/ComponentSearchModal'
+import { MultiProfileKeyboardSounds } from './components/MultiProfileKeyboardSounds'
 import { colorAnalysis } from './utils/colorAnalysis'
 
 // Types for our keyboard configuration
@@ -54,6 +55,7 @@ export function App() {
   const [colorAnalysisResult, setColorAnalysisResult] = useState<any>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [debugMode, setDebugMode] = useState(false)
 
   // Case color options - used in both customizer and case-customizer
   const caseColorOptions = [
@@ -961,10 +963,117 @@ export function App() {
             <div className="absolute bottom-4 left-4 text-slate-400 text-xs">
               Drag to rotate • Pinch to zoom
             </div>
+            
+            {/* Debug Mode Toggle */}
+            <button
+              onClick={() => setDebugMode(!debugMode)}
+              className="absolute top-4 right-4 bg-red-600/80 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs transition-colors"
+              title={debugMode ? "Hide Debug Info" : "Show Debug Info"}
+            >
+              {debugMode ? "🔧 Debug ON" : "🔧 Debug"}
+            </button>
           </div>
 
+          {/* Keyboard Sound System - Integrated */}
+          <div className="mb-8">
+            <MultiProfileKeyboardSounds 
+              compactMode={true}
+              className="shadow-lg"
+              onSoundPlay={(profile, key) => {
+                console.log(`🎹 Sound played: ${profile} - ${key}`)
+              }}
+            />
+          </div>
 
-
+          {/* TEMPORARY DEBUG: AI Color Analysis Results */}
+          {debugMode && (colorAnalysisResult || previewImage) && (
+            <div className="mb-8 p-4 rounded-2xl bg-red-900/20 border-2 border-red-500/50">
+              <h3 className="text-red-300 font-bold text-lg mb-4">🔧 DEBUG: AI Color Analysis Results</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Product Image Preview */}
+                {previewImage && (
+                  <div className="bg-slate-900/60 rounded-xl p-4">
+                    <h4 className="text-white font-medium mb-2">📸 Product Image Sent to AI</h4>
+                    <img 
+                      src={previewImage} 
+                      alt="Product analyzed by AI"
+                      className="w-full max-h-48 object-contain rounded-lg border border-slate-600"
+                    />
+                    <p className="text-slate-400 text-xs mt-2">
+                      Image size: {previewImage.length.toLocaleString()} characters
+                    </p>
+                  </div>
+                )}
+                
+                {/* AI Analysis Results */}
+                {colorAnalysisResult && (
+                  <div className="bg-slate-900/60 rounded-xl p-4">
+                    <h4 className="text-white font-medium mb-2">🤖 AI Color Detection Results</h4>
+                    <div className="space-y-2">
+                      {colorAnalysisResult.primary && (
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-6 h-6 rounded border border-slate-500"
+                            style={{ backgroundColor: colorAnalysisResult.primary.hex }}
+                          ></div>
+                          <span className="text-white text-sm">
+                            Primary: {colorAnalysisResult.primary.name} ({colorAnalysisResult.primary.hex})
+                          </span>
+                          <span className="text-green-400 text-xs">
+                            Confidence: {colorAnalysisResult.primary.confidence}/10
+                          </span>
+                        </div>
+                      )}
+                      
+                      {colorAnalysisResult.modifier && (
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-6 h-6 rounded border border-slate-500"
+                            style={{ backgroundColor: colorAnalysisResult.modifier.hex }}
+                          ></div>
+                          <span className="text-white text-sm">
+                            Modifier: {colorAnalysisResult.modifier.name} ({colorAnalysisResult.modifier.hex})
+                          </span>
+                        </div>
+                      )}
+                      
+                      {colorAnalysisResult.accent && (
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-6 h-6 rounded border border-slate-500"
+                            style={{ backgroundColor: colorAnalysisResult.accent.hex }}
+                          ></div>
+                          <span className="text-white text-sm">
+                            Accent: {colorAnalysisResult.accent.name} ({colorAnalysisResult.accent.hex})
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-3 p-2 bg-slate-800/50 rounded text-xs">
+                      <strong className="text-blue-300">Raw AI Response:</strong>
+                      <pre className="text-slate-300 mt-1 whitespace-pre-wrap">
+                        {JSON.stringify(colorAnalysisResult, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-4 text-center">
+                <button 
+                  onClick={() => {
+                    setColorAnalysisResult(null)
+                    setPreviewImage(null)
+                  }}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+                >
+                  Clear Debug Data
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Component Details */}
           <div className="space-y-4 mb-32 relative z-20">
