@@ -1079,6 +1079,190 @@ export function App() {
             />
           </div>
 
+          {/* Component Details */}
+          <div className="space-y-4 mb-8 relative z-20">
+            <div className="space-y-4">
+              {/* Keycaps - Clickable */}
+              <button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Keycaps button clicked!')
+                  setSelectedComponent('keycaps')
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Keycaps button touched!')
+                  setSelectedComponent('keycaps')
+                }}
+                className={`w-full bg-slate-900/40 border rounded-xl p-4 hover:bg-slate-900/60 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation ${
+                  isAnalyzing 
+                    ? 'border-violet-500/50 bg-violet-900/20' 
+                    : 'border-slate-700/50 hover:border-blue-500/50'
+                }`}
+              >
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className={`w-3 h-3 rounded-full transition-transform ${
+                    isAnalyzing 
+                      ? 'bg-violet-500 animate-pulse' 
+                      : 'bg-blue-500 group-hover:scale-110'
+                  }`}></div>
+                  <h3 className={`font-medium text-sm transition-colors ${
+                    isAnalyzing 
+                      ? 'text-violet-300' 
+                      : 'text-white group-hover:text-blue-300'
+                  }`}>
+                    Keycaps {isAnalyzing && '🤖'}
+                  </h3>
+                  {isAnalyzing ? (
+                    <div className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin ml-auto"></div>
+                  ) : (
+                    <svg className="w-3 h-3 text-slate-500 group-hover:text-blue-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </div>
+                {selectedProducts.keycaps ? (
+                  <>
+                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.keycaps.title}</p>
+                    {isAnalyzing ? (
+                      <p className="text-violet-400 text-xs mt-1 animate-pulse">Analyzing colors...</p>
+                    ) : (
+                      <p className="text-green-400 text-xs mt-1">${(() => {
+                        const product = selectedProducts.keycaps
+                        return product.priceRange?.minVariantPrice?.amount ||
+                               product.priceRange?.min?.amount ||
+                               product.variants?.[0]?.priceV2?.amount ||
+                               product.variants?.[0]?.price ||
+                               product.price?.amount ||
+                               product.price ||
+                               'N/A'
+                      })()}</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.keycaps.toUpperCase()} Profile</p>
+                    <p className="text-slate-500 text-xs mt-1 group-hover:text-blue-400/70 transition-colors">Click to shop</p>
+                  </>
+                )}
+              </button>
+              
+              {/* Switches - Clickable */}
+              <button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Switches button clicked!')
+                  setSelectedComponent('switches')
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Switches button touched!')
+                  setSelectedComponent('switches')
+                }}
+                className="w-full bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-900/60 hover:border-amber-500/50 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation"
+              >
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-3 h-3 bg-amber-500 rounded-full group-hover:scale-110 transition-transform"></div>
+                  <h3 className="text-white font-medium text-sm group-hover:text-amber-300 transition-colors">Switches</h3>
+                  <svg className="w-3 h-3 text-slate-500 group-hover:text-amber-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                {selectedProducts.switches ? (
+                  <>
+                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.switches.title}</p>
+                    <p className="text-green-400 text-xs mt-1">${(() => {
+                      const product = selectedProducts.switches
+                      return product.priceRange?.minVariantPrice?.amount ||
+                             product.priceRange?.min?.amount ||
+                             product.variants?.[0]?.priceV2?.amount ||
+                             product.variants?.[0]?.price ||
+                             product.price?.amount ||
+                             product.price ||
+                             'N/A'
+                    })()}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.switches} Type</p>
+                    <p className="text-slate-500 text-xs mt-1 group-hover:text-amber-400/70 transition-colors">Click to shop</p>
+                  </>
+                )}
+              </button>
+              
+              {/* Case - Clickable */}
+              <button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Case button clicked!')
+                  setSelectedComponent('case')
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Case button touched!')
+                  setSelectedComponent('case')
+                }}
+                className={`w-full bg-slate-900/40 border rounded-xl p-4 hover:bg-slate-900/60 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation ${
+                  isAnalyzing && selectedProducts.case
+                    ? 'border-orange-500/50 bg-orange-900/20' 
+                    : 'border-slate-700/50 hover:border-slate-400/50'
+                }`}
+              >
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className={`w-3 h-3 rounded-full transition-transform ${
+                    isAnalyzing && selectedProducts.case
+                      ? 'bg-orange-500 animate-pulse' 
+                      : 'bg-slate-500 group-hover:scale-110'
+                  }`}></div>
+                  <h3 className={`font-medium text-sm transition-colors ${
+                    isAnalyzing && selectedProducts.case
+                      ? 'text-orange-300' 
+                      : 'text-white group-hover:text-slate-300'
+                  }`}>
+                    Case {isAnalyzing && selectedProducts.case && '🏠'}
+                  </h3>
+                  {isAnalyzing && selectedProducts.case ? (
+                    <div className="w-3 h-3 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin ml-auto"></div>
+                  ) : (
+                    <svg className="w-3 h-3 text-slate-500 group-hover:text-slate-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </div>
+                {selectedProducts.case ? (
+                  <>
+                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.case.title}</p>
+                    {isAnalyzing && selectedProducts.case ? (
+                      <p className="text-orange-400 text-xs mt-1 animate-pulse">Analyzing colors...</p>
+                    ) : (
+                      <p className="text-green-400 text-xs mt-1">${(() => {
+                        const product = selectedProducts.case
+                        return product.priceRange?.minVariantPrice?.amount ||
+                               product.priceRange?.min?.amount ||
+                               product.variants?.[0]?.priceV2?.amount ||
+                               product.variants?.[0]?.price ||
+                               product.price?.amount ||
+                               product.price ||
+                               'N/A'
+                      })()}</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.case} Material</p>
+                    <p className="text-slate-500 text-xs mt-1 group-hover:text-slate-400/70 transition-colors">Click to shop</p>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Virtual Keyboard for Mobile Testing */}
           <div className="mb-8">
             <VirtualKeyboard 
@@ -1246,202 +1430,19 @@ export function App() {
             </div>
           )}
 
-          {/* Component Details */}
-          <div className="space-y-4 mb-32 relative z-20">
-            <div className="grid grid-cols-3 gap-4">
-              {/* Keycaps - Clickable */}
-              <button 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Keycaps button clicked!')
-                  setSelectedComponent('keycaps')
-                }}
-                onTouchStart={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Keycaps button touched!')
-                  setSelectedComponent('keycaps')
-                }}
-                className={`bg-slate-900/40 border rounded-xl p-4 hover:bg-slate-900/60 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation ${
-                  isAnalyzing 
-                    ? 'border-violet-500/50 bg-violet-900/20' 
-                    : 'border-slate-700/50 hover:border-blue-500/50'
-                }`}
-              >
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className={`w-3 h-3 rounded-full transition-transform ${
-                    isAnalyzing 
-                      ? 'bg-violet-500 animate-pulse' 
-                      : 'bg-blue-500 group-hover:scale-110'
-                  }`}></div>
-                  <h3 className={`font-medium text-sm transition-colors ${
-                    isAnalyzing 
-                      ? 'text-violet-300' 
-                      : 'text-white group-hover:text-blue-300'
-                  }`}>
-                    Keycaps {isAnalyzing && '🤖'}
-                  </h3>
-                  {isAnalyzing ? (
-                    <div className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin ml-auto"></div>
-                  ) : (
-                    <svg className="w-3 h-3 text-slate-500 group-hover:text-blue-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  )}
-                </div>
-                {selectedProducts.keycaps ? (
-                  <>
-                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.keycaps.title}</p>
-                    {isAnalyzing ? (
-                      <p className="text-violet-400 text-xs mt-1 animate-pulse">Analyzing colors...</p>
-                    ) : (
-                      <p className="text-green-400 text-xs mt-1">${(() => {
-                        const product = selectedProducts.keycaps
-                        return product.priceRange?.minVariantPrice?.amount ||
-                               product.priceRange?.min?.amount ||
-                               product.variants?.[0]?.priceV2?.amount ||
-                               product.variants?.[0]?.price ||
-                               product.price?.amount ||
-                               product.price ||
-                               'N/A'
-                      })()}</p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.keycaps.toUpperCase()} Profile</p>
-                    <p className="text-slate-500 text-xs mt-1 group-hover:text-blue-400/70 transition-colors">Click to shop</p>
-                  </>
-                )}
-              </button>
-              
-              {/* Switches - Clickable */}
-              <button 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Switches button clicked!')
-                  setSelectedComponent('switches')
-                }}
-                onTouchStart={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Switches button touched!')
-                  setSelectedComponent('switches')
-                }}
-                className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-900/60 hover:border-amber-500/50 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation"
-              >
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-3 h-3 bg-amber-500 rounded-full group-hover:scale-110 transition-transform"></div>
-                  <h3 className="text-white font-medium text-sm group-hover:text-amber-300 transition-colors">Switches</h3>
-                  <svg className="w-3 h-3 text-slate-500 group-hover:text-amber-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                {selectedProducts.switches ? (
-                  <>
-                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.switches.title}</p>
-                    <p className="text-green-400 text-xs mt-1">${(() => {
-                      const product = selectedProducts.switches
-                      return product.priceRange?.minVariantPrice?.amount ||
-                             product.priceRange?.min?.amount ||
-                             product.variants?.[0]?.priceV2?.amount ||
-                             product.variants?.[0]?.price ||
-                             product.price?.amount ||
-                             product.price ||
-                             'N/A'
-                    })()}</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.switches} Type</p>
-                    <p className="text-slate-500 text-xs mt-1 group-hover:text-amber-400/70 transition-colors">Click to shop</p>
-                  </>
-                )}
-              </button>
-              
-              {/* Case - Clickable */}
-              <button 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Case button clicked!')
-                  setSelectedComponent('case')
-                }}
-                onTouchStart={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Case button touched!')
-                  setSelectedComponent('case')
-                }}
-                className={`bg-slate-900/40 border rounded-xl p-4 hover:bg-slate-900/60 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation ${
-                  isAnalyzing && selectedProducts.case
-                    ? 'border-orange-500/50 bg-orange-900/20' 
-                    : 'border-slate-700/50 hover:border-slate-400/50'
-                }`}
-              >
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className={`w-3 h-3 rounded-full transition-transform ${
-                    isAnalyzing && selectedProducts.case
-                      ? 'bg-orange-500 animate-pulse' 
-                      : 'bg-slate-500 group-hover:scale-110'
-                  }`}></div>
-                  <h3 className={`font-medium text-sm transition-colors ${
-                    isAnalyzing && selectedProducts.case
-                      ? 'text-orange-300' 
-                      : 'text-white group-hover:text-slate-300'
-                  }`}>
-                    Case {isAnalyzing && selectedProducts.case && '🏠'}
-                  </h3>
-                  {isAnalyzing && selectedProducts.case ? (
-                    <div className="w-3 h-3 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin ml-auto"></div>
-                  ) : (
-                    <svg className="w-3 h-3 text-slate-500 group-hover:text-slate-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  )}
-                </div>
-                {selectedProducts.case ? (
-                  <>
-                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.case.title}</p>
-                    {isAnalyzing && selectedProducts.case ? (
-                      <p className="text-orange-400 text-xs mt-1 animate-pulse">Analyzing colors...</p>
-                    ) : (
-                      <p className="text-green-400 text-xs mt-1">${(() => {
-                        const product = selectedProducts.case
-                        return product.priceRange?.minVariantPrice?.amount ||
-                               product.priceRange?.min?.amount ||
-                               product.variants?.[0]?.priceV2?.amount ||
-                               product.variants?.[0]?.price ||
-                               product.price?.amount ||
-                               product.price ||
-                               'N/A'
-                      })()}</p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.case} Material</p>
-                    <p className="text-slate-500 text-xs mt-1 group-hover:text-slate-400/70 transition-colors">Click to shop</p>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
           
           {/* Fixed Bottom Actions */}
           <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
             <div className="flex space-x-2">
               <button 
                 onClick={() => setCurrentPage('customizer')}
-                className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-3 rounded-xl hover:bg-slate-900/80 transition-all duration-200 text-sm"
+                className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-3 rounded-xl hover:bg-slate-900/80 transition-all duration-200 text-sm hidden"
               >
                 Customize Colors
               </button>
               <button 
                 onClick={() => setCurrentPage('case-customizer')}
-                className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-3 rounded-xl hover:bg-slate-900/80 transition-all duration-200 text-sm"
+                className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-3 rounded-xl hover:bg-slate-900/80 transition-all duration-200 text-sm hidden"
               >
                 Customize Case
               </button>
@@ -1454,7 +1455,7 @@ export function App() {
                 </svg>
               </button>
               <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-3 rounded-xl hover:shadow-lg transition-all duration-200 text-sm">
-                Add - ${calculateCartTotal().toFixed(2)}
+                Add to Cart - ${calculateCartTotal().toFixed(2)}
               </button>
             </div>
           </div>
