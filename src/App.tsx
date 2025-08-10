@@ -919,21 +919,6 @@ export function App() {
               </div>
             </div>
 
-            {/* Virtual Keyboard for Mobile Testing */}
-            <div className="mt-6">
-              <VirtualKeyboard 
-                onKeyPress={(key) => {
-                  console.log('🎹 App received virtual key press:', key, 'Function available:', !!keyboardSoundFunction);
-                  if (keyboardSoundFunction) {
-                    keyboardSoundFunction(key);
-                  } else {
-                    console.log('❌ No keyboard sound function available');
-                  }
-                }}
-                isAudioEnabled={isAudioEnabled}
-                className="shadow-lg"
-              />
-            </div>
           </div>
 
           {/* Fixed Bottom Actions */}
@@ -949,7 +934,7 @@ export function App() {
                 onClick={() => setCurrentPage('builder')}
                 className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200"
               >
-                See Recommendations
+                Select Parts
               </button>
             </div>
           </div>
@@ -1432,7 +1417,7 @@ export function App() {
 
           
           {/* Fixed Bottom Actions */}
-          <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
+          <div className="fixed bottom-0 left-0 right-0 bg-slate-950 backdrop-blur-sm border-t border-slate-800/50 p-4">
             <div className="flex space-x-2">
               <button 
                 onClick={() => setCurrentPage('customizer')}
