@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react'
-import { RealKeysim } from './components/RealKeysim'
-import { ComponentSearchModal } from './components/ComponentSearchModal'
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { RealKeysim } from './components/RealKeysim';
+import { ComponentSearchModal } from './components/ComponentSearchModal';
+import { AnimatedBackground } from './components/AnimatedBackground';
+import { HolographicButton } from './components/HolographicButton';
+import { KeyboardCarousel } from './components/KeyboardCarousel';
 
 // Types for our keyboard configuration
 interface KeyboardConfig {
@@ -15,7 +19,7 @@ interface KeyboardConfig {
   switch_color: string
 }
 
-type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer'
+type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer' | 'sound-test'
 
 
 
@@ -108,115 +112,56 @@ export function App() {
     return total > 0 ? total : 399
   }
 
-  // Welcome Page - Clean Minimalistic Design with Blue Accents
+  // Welcome Page - Black Background with Floating Rings and 3D Carousel
   if (currentPage === 'welcome') {
     return (
-      <div className={`min-h-screen bg-gradient-subtle-blue ${isTransitioning ? 'page-exit' : 'page-enter-zoom'}`}>
-        <div className="section-padding max-w-4xl mx-auto">
-          {/* Hero Section */}
-            <div className="text-center mb-16">
-            {/* Clean Logo */}
-            <div className={`mb-8 transform transition-all duration-700 ${
-              isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}>
-              <div className="w-20 h-20 mx-auto minimal-card flex items-center justify-center animate-float">
-                <div className="w-8 h-8 bg-dark rounded-md flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">K</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-            {/* Clean Typography */}
-            <div className={`mb-6 transform transition-all duration-700 delay-200 ${
-              isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}>
-              <h1 className="text-display text-primary mb-4">
-                Custom Keyboards
-                </h1>
-              <p className="text-body text-secondary max-w-md mx-auto">
-                Design and build your perfect mechanical keyboard with precision and style
-              </p>
-              </div>
-              
-            {/* CTA Button */}
-            <div className={`transform transition-all duration-700 delay-400 ${
-                isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}>
-              <button
-                onClick={() => navigateToPage('preferences')}
-                className="bg-gradient-deep-blue text-white font-medium text-lg px-8 py-4 rounded-xl hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 relative overflow-hidden hover:scale-105 active:scale-95"
-              >
-                <span className="relative z-10">Start Building</span>
-                <div className="absolute inset-0 bg-gradient-ocean-blue opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-              </button>
-            </div>
-            </div>
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Animated Background with floating rings */}
+        <AnimatedBackground />
+        
+        {/* Main Content */}
+        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
+          {/* 3D Keyboard Carousel */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="mb-16"
+          >
+            <KeyboardCarousel />
+          </motion.div>
 
-          {/* Feature Grid */}
-          <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 transform transition-all duration-700 delay-600 ${
-            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}>
-            {[
-              {
-                  title: "3D Visualization",
-                description: "Real-time rendering of every component",
-                icon: (
-                  <div className="w-6 h-6 bg-quaternary rounded-md flex items-center justify-center">
-                    <div className="w-3 h-2 bg-dark rounded-sm"></div>
-                  </div>
-                )
-              },
-              {
-                  title: "Authentic Sound",
-                description: "Experience realistic typing feedback",
-                icon: (
-                  <div className="w-6 h-6 bg-quaternary rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-dark rounded-full"></div>
-                  </div>
-                )
-              },
-              {
-                title: "Premium Parts",
-                description: "Curated switches, keycaps, and cases",
-                  icon: (
-                  <div className="w-6 h-6 bg-quaternary rounded-md flex items-center justify-center">
-                    <div className="grid grid-cols-2 gap-0.5 w-3 h-3">
-                      <div className="bg-dark rounded-sm"></div>
-                      <div className="bg-dark rounded-sm"></div>
-                      <div className="bg-dark rounded-sm"></div>
-                      <div className="bg-dark rounded-sm"></div>
-                    </div>
-                  </div>
-                )
-                }
-              ].map((feature, index) => (
-              <div key={index} className="minimal-card p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                      {feature.icon}
-                    </div>
-                <h3 className="text-subheading text-primary mb-2">{feature.title}</h3>
-                <p className="text-small text-secondary">{feature.description}</p>
-                </div>
-              ))}
-            </div>
+          {/* Main Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="text-center mb-12"
+          >
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-4">
+              Design Your Custom Clicks
+            </h1>
+            <p className="text-xl text-gray-400 max-w-lg mx-auto">
+              perfect your mechanical keyboard experience
+            </p>
+          </motion.div>
 
-          {/* Trust Indicators */}
-          <div className={`text-center transform transition-all duration-700 delay-800 ${
-            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}>
-            <div className="flex items-center justify-center space-x-8 text-xs text-muted">
-              {[
-                "Free Shipping",
-                "30-Day Returns", 
-                "2-Year Warranty"
-                ].map((item, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-dark rounded-full"></div>
-                  <span>{item}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
+          {/* Start Building Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="text-center mb-16"
+          >
+            <HolographicButton
+              onClick={() => setCurrentPage('builder')}
+              variant="primary"
+              size="lg"
+              className="px-12 py-4"
+            >
+              Start Building
+            </HolographicButton>
+          </motion.div>
         </div>
       </div>
     )
