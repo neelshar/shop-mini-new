@@ -970,8 +970,46 @@ export function App() {
     )
   }
 
-  // Simple Case Color Customizer Page
+  // KEYCAP Color Customizer Page (Customize Colors button)
   if (currentPage === 'customizer') {
+    
+    // Keycap color options
+    const keycapColorOptions = [
+      { name: 'Blue', value: '#4a90e2' },
+      { name: 'White', value: '#ffffff' },
+      { name: 'Black', value: '#333333' },
+      { name: 'Red', value: '#ff4757' },
+      { name: 'Green', value: '#2ed573' },
+      { name: 'Purple', value: '#a55eea' },
+      { name: 'Orange', value: '#ffa726' },
+      { name: 'Pink', value: '#fd79a8' },
+      { name: 'Cyan', value: '#00d2d3' },
+      { name: 'Yellow', value: '#feca57' },
+    ]
+    
+    const updateKeycapColor = (newColor: string) => {
+      console.log('🎨 UPDATING KEYCAP COLOR TO:', newColor)
+      setKeyboardConfig(prev => ({ ...prev, keycap_color: newColor }))
+      
+      // Update keycaps in the 3D scene if possible
+      if ((window as any).THREE && (window as any).scene) {
+        const scene = (window as any).scene
+        scene.traverse((object: any) => {
+          if (object.material && (object.name?.includes('KEY') || object.name?.includes('KEYCAP'))) {
+            console.log('🎯 Updating keycap object:', object.name)
+            if (Array.isArray(object.material)) {
+              object.material.forEach((mat: any) => {
+                mat.color.setHex(parseInt(newColor.replace('#', '0x')))
+                mat.needsUpdate = true
+              })
+            } else {
+              object.material.color.setHex(parseInt(newColor.replace('#', '0x')))
+              object.material.needsUpdate = true
+            }
+          }
+        })
+      }
+    }
 
 
     return (
@@ -989,23 +1027,23 @@ export function App() {
                 </svg>
               </button>
               <div>
-                <h1 className="text-xl font-semibold text-white">Customize Case Color</h1>
-                <p className="text-slate-400 text-sm">Choose your keyboard case color</p>
+                <h1 className="text-xl font-semibold text-white">Customize Keycap Colors</h1>
+                <p className="text-slate-400 text-sm">Choose your keycap colors</p>
               </div>
             </div>
           </div>
 
-          {/* Current Color Display */}
+          {/* Current Keycap Color Display */}
           <div className="mb-6">
             <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
               <div className="flex items-center space-x-4">
                 <div 
                   className="w-12 h-12 rounded-xl border-2 border-slate-600"
-                  style={{ backgroundColor: keyboardConfig.case_color }}
+                  style={{ backgroundColor: keyboardConfig.keycap_color }}
                 ></div>
                 <div>
-                  <h3 className="text-white font-medium">Current Case Color</h3>
-                  <p className="text-slate-400 text-sm">{keyboardConfig.case_color}</p>
+                  <h3 className="text-white font-medium">Current Keycap Color</h3>
+                  <p className="text-slate-400 text-sm">{keyboardConfig.keycap_color}</p>
                 </div>
               </div>
             </div>
@@ -1021,22 +1059,22 @@ export function App() {
             </button>
           </div>
 
-          {/* Case Color Options */}
+          {/* Keycap Color Options */}
           <div className="mb-8">
-            <h3 className="text-white font-medium mb-4">Select New Case Color</h3>
+            <h3 className="text-white font-medium mb-4">Select Keycap Color</h3>
             <div className="grid grid-cols-5 gap-4">
-              {caseColorOptions.map((color) => (
+              {keycapColorOptions.map((color) => (
                 <button
                   key={color.value}
-                  onClick={() => updateCaseColor(color.value)}
+                  onClick={() => updateKeycapColor(color.value)}
                   className={`aspect-square rounded-xl border-2 transition-all duration-200 relative ${
-                    keyboardConfig.case_color === color.value
+                    keyboardConfig.keycap_color === color.value
                       ? 'border-white scale-110 shadow-lg'
                       : 'border-slate-600 hover:border-slate-400 hover:scale-105'
                   }`}
                   style={{ backgroundColor: color.value }}
                 >
-                  {keyboardConfig.case_color === color.value && (
+                  {keyboardConfig.keycap_color === color.value && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <svg className="w-6 h-6 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -1048,7 +1086,7 @@ export function App() {
               ))}
             </div>
             <div className="grid grid-cols-5 gap-4 mt-2">
-              {caseColorOptions.map((color) => (
+              {keycapColorOptions.map((color) => (
                 <p key={`label-${color.value}`} className="text-xs text-slate-400 text-center">
                   {color.name}
                 </p>
@@ -1063,9 +1101,9 @@ export function App() {
                 <path fillRule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clipRule="evenodd" />
               </svg>
               <div>
-                <h4 className="text-blue-300 font-medium text-sm">Dynamic Updates</h4>
+                <h4 className="text-blue-300 font-medium text-sm">Keycap Colors</h4>
                 <p className="text-blue-200/80 text-sm">
-                  Case colors now update instantly! Click any color above to see the change applied immediately to the 3D keyboard.
+                  Click any color above to change your keycap colors. The change applies to all the keys on your keyboard.
                 </p>
               </div>
             </div>
