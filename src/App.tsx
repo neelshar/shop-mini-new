@@ -636,6 +636,12 @@ export function App() {
               >
                 Customize Colors
               </button>
+              <button 
+                onClick={() => setCurrentPage('customize-case')}
+                className="flex-1 bg-orange-600 border border-orange-500 text-white font-medium py-3 px-4 rounded-xl hover:bg-orange-700 transition-all duration-200"
+              >
+                Customize Case
+              </button>
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200 flex items-center space-x-2"
@@ -853,17 +859,14 @@ export function App() {
       console.log('🔍 === SCENE DEBUG END ===')
     }
 
-    // COMPLETELY REVAMPED COLOR CHANGER
+    // CASE COLOR CHANGER - Targets the actual keyboard case
     const updateCaseColor = (newColor: string) => {
-      console.log('🎨 === COLOR CHANGE START ===', newColor)
-      
-      // First, debug what we have
-      debugScene()
+      console.log('🏠 === CASE COLOR CHANGE START ===', newColor)
       
       // Update React state
       setKeyboardConfig(prev => ({ ...prev, case_color: newColor }))
       
-      let colorChanged = false
+      let caseColorChanged = false
       const THREE = (window as any).THREE
       
       if (!THREE) {
@@ -871,70 +874,71 @@ export function App() {
         return
       }
       
-      // Method 1: Update via caseManager
+      // Method 1: Target the actual CASE object specifically
       if ((window as any).caseManager) {
         const caseManager = (window as any).caseManager
-        console.log('🔧 Updating via caseManager...')
+        console.log('🔧 Updating CASE via caseManager...')
         
         // Update the manager's color
         caseManager.color = newColor
         
-        // Update direct case object
+        // Find and update the actual keyboard case (not keys)
         if (caseManager.case && caseManager.case.material) {
-          console.log('🎯 Found caseManager.case, updating material...')
+          console.log('🎯 Found keyboard CASE mesh, updating material...')
           
-          // Handle both single material and material array
           if (Array.isArray(caseManager.case.material)) {
             caseManager.case.material.forEach((mat: any, i: number) => {
-              console.log(`  Updating material [${i}]:`, mat.constructor.name)
+              console.log(`  Updating CASE material [${i}]:`, mat.constructor.name)
               mat.color.setHex(parseInt(newColor.replace('#', '0x')))
               mat.needsUpdate = true
             })
           } else {
-            console.log('  Updating single material:', caseManager.case.material.constructor.name)
+            console.log('  Updating single CASE material:', caseManager.case.material.constructor.name)
             caseManager.case.material.color.setHex(parseInt(newColor.replace('#', '0x')))
             caseManager.case.material.needsUpdate = true
           }
-          colorChanged = true
+          caseColorChanged = true
         }
         
-        // Update all children in the group
+        // Also check the group for case-specific objects
         if (caseManager.group && caseManager.group.children) {
-          console.log('🔧 Updating group children...')
+          console.log('🔧 Checking group children for CASE objects...')
           caseManager.group.children.forEach((child: any, i: number) => {
-            if (child.material) {
-              console.log(`  Updating child [${i}] ${child.name}:`, child.material.constructor.name)
-              
-              if (Array.isArray(child.material)) {
-                child.material.forEach((mat: any) => {
-                  mat.color.setHex(parseInt(newColor.replace('#', '0x')))
-                  mat.needsUpdate = true
-                })
-              } else {
-                child.material.color.setHex(parseInt(newColor.replace('#', '0x')))
-                child.material.needsUpdate = true
+            // Only update objects that are specifically the case (not keys/switches)
+            if (child.name === 'CASE' || child.name?.includes('case') || child.name?.includes('Case')) {
+              if (child.material) {
+                console.log(`  Updating CASE child [${i}] ${child.name}:`, child.material.constructor.name)
+                
+                if (Array.isArray(child.material)) {
+                  child.material.forEach((mat: any) => {
+                    mat.color.setHex(parseInt(newColor.replace('#', '0x')))
+                    mat.needsUpdate = true
+                  })
+                } else {
+                  child.material.color.setHex(parseInt(newColor.replace('#', '0x')))
+                  child.material.needsUpdate = true
+                }
+                caseColorChanged = true
               }
-              colorChanged = true
             }
           })
         }
       }
       
-      // Method 2: Update via scene traversal
+      // Method 2: Scene traversal for case-specific objects
       if ((window as any).scene) {
         const scene = (window as any).scene
-        console.log('🔧 Updating via scene traversal...')
+        console.log('🔧 Scene traversal for CASE objects...')
         
         scene.traverse((object: any) => {
-          if (object.material && object.type === 'Mesh') {
-            // Check if this looks like a case object
-            const isCase = object.name === 'CASE' || 
-                          object.parent?.name === 'CASE' ||
-                          (object.geometry && object.material)
+          // Only target objects that are specifically the case
+          if (object.name === 'CASE' || 
+              object.name?.toLowerCase()?.includes('case') ||
+              (object.parent?.name === 'CASE' && object.material && object.type === 'Mesh')) {
             
-            if (isCase) {
-              console.log('🎯 Updating scene object:', object.name || 'unnamed', object.material.constructor.name)
-              
+            console.log('🎯 Updating CASE scene object:', object.name || 'unnamed', object.material?.constructor?.name)
+            
+            if (object.material) {
               if (Array.isArray(object.material)) {
                 object.material.forEach((mat: any) => {
                   mat.color.setHex(parseInt(newColor.replace('#', '0x')))
@@ -944,13 +948,13 @@ export function App() {
                 object.material.color.setHex(parseInt(newColor.replace('#', '0x')))
                 object.material.needsUpdate = true
               }
-              colorChanged = true
+              caseColorChanged = true
             }
           }
         })
       }
       
-      // Method 3: Force re-render
+      // Force re-render
       if ((window as any).renderer && (window as any).scene && (window as any).camera) {
         console.log('🔧 Forcing render...')
         const renderer = (window as any).renderer
@@ -959,10 +963,10 @@ export function App() {
         renderer.render(scene, camera)
       }
       
-      console.log('🎨 === COLOR CHANGE END ===', colorChanged ? '✅ SUCCESS' : '❌ FAILED')
+      console.log('🏠 === CASE COLOR CHANGE END ===', caseColorChanged ? '✅ SUCCESS' : '❌ FAILED')
       
-      if (!colorChanged) {
-        console.error('❌ NO MATERIALS WERE UPDATED! Check the debug output above.')
+      if (!caseColorChanged) {
+        console.error('❌ NO CASE MATERIALS WERE UPDATED! Check the debug output above.')
       }
     }
 
@@ -1083,7 +1087,108 @@ export function App() {
         </div>
       </div>
     )
-}
+  }
+
+  // Customize Case Page - For changing keyboard case colors
+  if (currentPage === 'customize-case') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
+        <div className="pt-4 px-4 pb-24">
+          {/* Header */}
+          <div className="sticky top-0 bg-gradient-to-br from-zinc-950/95 via-slate-950/95 to-zinc-950/95 backdrop-blur-sm z-10 pb-4 mb-6">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setCurrentPage('builder')}
+                className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-xl font-semibold text-white">Customize Case Color</h1>
+                <p className="text-slate-400 text-sm">Change your keyboard case color</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Case Color Display */}
+          <div className="mb-6">
+            <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
+              <div className="flex items-center space-x-4">
+                <div 
+                  className="w-12 h-12 rounded-xl border-2 border-slate-600"
+                  style={{ backgroundColor: keyboardConfig.case_color }}
+                ></div>
+                <div>
+                  <h3 className="text-white font-medium">Current Case Color</h3>
+                  <p className="text-slate-400 text-sm">{keyboardConfig.case_color}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Debug Button */}
+          <div className="mb-6">
+            <button
+              onClick={debugScene}
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium"
+            >
+              🔍 Debug Scene (Check Console)
+            </button>
+          </div>
+
+          {/* Case Color Options */}
+          <div className="mb-8">
+            <h3 className="text-white font-medium mb-4">Select New Case Color</h3>
+            <div className="grid grid-cols-5 gap-4">
+              {caseColorOptions.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => updateCaseColor(color.value)}
+                  className={`aspect-square rounded-xl border-2 transition-all duration-200 relative ${
+                    keyboardConfig.case_color === color.value
+                      ? 'border-white scale-110 shadow-lg'
+                      : 'border-slate-600 hover:border-slate-400 hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                >
+                  {keyboardConfig.case_color === color.value && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-slate-400 whitespace-nowrap">
+                    {color.name}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Fixed Bottom Actions */}
+        <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
+          <div className="flex space-x-3">
+            <button 
+              onClick={() => setCurrentPage('builder')}
+              className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200"
+            >
+              Back to Builder
+            </button>
+            <button 
+              onClick={() => setCurrentPage('builder')}
+              className="flex-1 bg-green-600 text-white font-medium py-3 px-4 rounded-xl hover:bg-green-700 transition-all duration-200"
+            >
+              View in 3D
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // This should never be reached, but just in case
   return null
