@@ -9,6 +9,7 @@ import { CHERRYMX_BLUE_PBT_SOUNDS } from './CherrymxBluePbtSounds';
 import { CHERRYMX_BROWN_PBT_SOUNDS } from './CherrymxBrownPbtSounds';
 import { CHERRYMX_RED_PBT_SOUNDS } from './CherrymxRedPbtSounds';
 import { TOPRE_PURPLE_HYBRID_PBT_SOUNDS } from './ToprePurpleHybridPbtSounds';
+import { AISwitchSoundSelector } from './AISwitchSoundSelector';
 
 // Sound profiles configuration
 const SOUND_PROFILES = {
@@ -98,12 +99,28 @@ interface MultiProfileKeyboardSoundsProps {
   className?: string;
   compactMode?: boolean;
   onSoundPlay?: (soundProfile: string, key: string) => void;
+  enableAISelector?: boolean;
+  externalProfile?: string; // Externally controlled profile selection
+  onProfileChange?: (profileId: string) => void; // Notify parent of profile changes
+  externalAudioEnabled?: boolean; // External audio state control (mute/unmute)
+  onAudioStateChange?: (enabled: boolean) => void; // Notify parent of audio state changes
+  hideAudioControls?: boolean; // Hide internal audio initialization controls
+  autoInitialize?: boolean; // Auto-initialize audio context on load
+  onVirtualKeyPress?: (playKeyboardSoundFn: (key: string) => void) => void; // Expose key press function for external use
 }
 
 export function MultiProfileKeyboardSounds({ 
   className = '', 
   compactMode = false,
-  onSoundPlay
+  onSoundPlay,
+  enableAISelector = false,
+  externalProfile,
+  onProfileChange,
+  externalAudioEnabled,
+  onAudioStateChange,
+  hideAudioControls = false,
+  autoInitialize = false,
+  onVirtualKeyPress
 }: MultiProfileKeyboardSoundsProps) {
   // Generate unique instance ID to track multiple component instances
   const instanceId = useRef(Math.random().toString(36).substr(2, 9));
@@ -111,12 +128,14 @@ export function MultiProfileKeyboardSounds({
   console.log('🎹 MultiProfileKeyboardSounds component loaded! Instance:', instanceId.current);
   
   const [audioInitialized, setAudioInitialized] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(true); // Start muted by default
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentlyPlayingKey, setCurrentlyPlayingKey] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<keyof typeof SOUND_PROFILES>('holy-pandas');
   const [testText, setTestText] = useState('');
   const [keyPressLog, setKeyPressLog] = useState<Array<{key: string, code: string, timestamp: number}>>([]);
   const [debugLog, setDebugLog] = useState<Array<{message: string, timestamp: number, type: 'info' | 'error' | 'success'}>>([]);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const currentGenericIndex = useRef(0);
   const keyToSoundMap = useRef<Map<string, number>>(new Map());
@@ -128,6 +147,56 @@ export function MultiProfileKeyboardSounds({
   const addDebugLog = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
     setDebugLog(prev => [{message, timestamp: Date.now(), type}, ...prev].slice(0, 20));
   };
+
+  // Auto-initialize audio on component mount if requested
+  useEffect(() => {
+    if (autoInitialize && !audioInitialized) {
+      console.log('🔊 Auto-initializing audio context...');
+      addDebugLog('🔊 Auto-initializing audio context');
+      initializeAudio();
+    }
+  }, [autoInitialize, audioInitialized]);
+
+  // Sync with external profile selection
+  useEffect(() => {
+    if (externalProfile && externalProfile !== selectedProfile && SOUND_PROFILES[externalProfile as keyof typeof SOUND_PROFILES]) {
+      console.log('🔄 Syncing with external profile:', externalProfile);
+      setSelectedProfile(externalProfile as keyof typeof SOUND_PROFILES);
+    }
+  }, [externalProfile, selectedProfile]);
+
+  // Sync with external audio state (now controls muting, not initialization)
+  useEffect(() => {
+    console.log('🔊 External audio mute sync check:', { 
+      externalAudioEnabled, 
+      audioMuted, 
+      audioInitialized,
+      typeCheck: typeof externalAudioEnabled,
+      needsSync: typeof externalAudioEnabled === 'boolean' && externalAudioEnabled !== !audioMuted
+    });
+    
+    if (typeof externalAudioEnabled === 'boolean') {
+      const shouldBeMuted = !externalAudioEnabled;
+      if (shouldBeMuted !== audioMuted) {
+        console.log('🔊 Syncing external mute state:', externalAudioEnabled, '-> muted:', shouldBeMuted);
+        setAudioMuted(shouldBeMuted);
+        
+        // Auto-initialize if not already done and trying to unmute
+        if (!shouldBeMuted && !audioInitialized) {
+          console.log('🔊 Auto-initializing for unmute...');
+          initializeAudio();
+        }
+      }
+    }
+  }, [externalAudioEnabled, audioMuted, audioInitialized]);
+
+  // Expose playKeyboardSound function to parent component
+  useEffect(() => {
+    if (onVirtualKeyPress) {
+      console.log('🎹 Exposing playKeyboardSound function to parent');
+      onVirtualKeyPress(playKeyboardSound);
+    }
+  }, [onVirtualKeyPress, audioInitialized, selectedProfile]);
 
   // Auto-focus the keyboard div when audio is initialized
   useEffect(() => {
@@ -256,6 +325,8 @@ export function MultiProfileKeyboardSounds({
       setAudioInitialized(true);
       addDebugLog('✅ Audio initialized state set to true');
       
+      // Audio initialized but remains muted (external control handles enabling)
+      
       // Wait a tick to ensure state is updated
       await new Promise(resolve => setTimeout(resolve, 100));
       
@@ -301,13 +372,19 @@ export function MultiProfileKeyboardSounds({
   };
 
   const playKeyboardSound = async (key: string) => {
-    console.log('🎵 playKeyboardSound called with:', { key, audioInitialized, audioContext: !!audioContextRef.current });
+    console.log('🎵 playKeyboardSound called with:', { key, audioInitialized, audioMuted, audioContext: !!audioContextRef.current });
     addDebugLog(`🎵 playKeyboardSound called with key: ${key}`);
-    addDebugLog(`🔍 State check: audioInit=${audioInitialized}, context=${!!audioContextRef.current}`);
+    addDebugLog(`🔍 State check: audioInit=${audioInitialized}, muted=${audioMuted}, context=${!!audioContextRef.current}`);
     
     if (!audioInitialized) {
       console.log('❌ audioInitialized is false');
       addDebugLog('❌ audioInitialized is false', 'error');
+      return;
+    }
+    
+    if (audioMuted) {
+      console.log('🔇 Audio is muted, skipping sound playback');
+      addDebugLog('🔇 Audio muted - sound skipped');
       return;
     }
     
@@ -431,7 +508,20 @@ export function MultiProfileKeyboardSounds({
     currentGenericIndex.current = 0; // Reset generic sound index
     keyToSoundMap.current.clear(); // Clear key mappings for new profile
     
+    // Notify parent of profile change
+    if (onProfileChange) {
+      onProfileChange(profileId);
+    }
+    
     addDebugLog(`✅ Profile switched to ${newProfile.name}`, 'success');
+  };
+
+  const handleAIProfileSelected = (profileId: string, analysisResult: any) => {
+    console.log('🤖 AI selected profile:', profileId, analysisResult);
+    addDebugLog(`🤖 AI selected: ${SOUND_PROFILES[profileId as keyof typeof SOUND_PROFILES]?.name} (confidence: ${analysisResult.confidence}/10)`, 'success');
+    
+    setAiAnalysisResult(analysisResult);
+    handleProfileChange(profileId as keyof typeof SOUND_PROFILES);
   };
 
   if (compactMode) {
@@ -446,7 +536,7 @@ export function MultiProfileKeyboardSounds({
           
           {/* DEBUG: Key Press Display */}
           {keyPressLog.length > 0 && (
-            <div className="mt-3 p-3 bg-green-900/20 border border-green-500/30 rounded-lg">
+            <div className="mt-3 p-3 bg-green-900/20 border border-green-500/30 rounded-lg hidden">
               <h4 className="text-green-300 text-xs font-medium mb-2">🔍 DEBUG: Key Detection</h4>
               <div className="text-green-200 text-xs space-y-1">
                 {keyPressLog.slice(0, 5).map((entry, index) => (
@@ -462,14 +552,14 @@ export function MultiProfileKeyboardSounds({
               <p className="text-green-400/60 text-[10px] mt-2">
                 ✅ Keyboard detection is working! {keyPressLog.length} total keys detected
                 <br/>
-                🔊 Audio Status: {audioInitialized ? '✅ Initialized' : '❌ Not initialized'}
+                🔊 Audio Status: {audioInitialized ? (audioMuted ? '🔇 Muted' : '✅ Ready') : '❌ Not initialized'}
               </p>
             </div>
           )}
 
           {/* DEBUG: Audio Function Calls */}
           {debugLog.length > 0 && (
-            <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+            <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg hidden">
               <h4 className="text-blue-300 text-xs font-medium mb-2">🔧 DEBUG: Audio Function Calls</h4>
               <div className="text-blue-200 text-xs space-y-1 max-h-32 overflow-y-auto">
                 {debugLog.slice(0, 10).map((entry, index) => (
@@ -493,8 +583,23 @@ export function MultiProfileKeyboardSounds({
           )}
         </div>
 
+        {/* Fallback Audio Button - Show if external controls hidden but audio not initialized */}
+        {hideAudioControls && !audioInitialized && (
+          <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+            <div className="text-yellow-300 text-xs font-medium mb-2">
+              ⚠️ Audio controls hidden - using fallback
+            </div>
+            <button
+              onClick={initializeAudio}
+              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
+            >
+              🔊 Enable Audio (Fallback)
+            </button>
+          </div>
+        )}
+
         {/* Initialize Button */}
-        {!audioInitialized ? (
+        {!hideAudioControls && !audioInitialized ? (
           <>
             <button
               onClick={initializeAudio}
@@ -503,32 +608,22 @@ export function MultiProfileKeyboardSounds({
               🔊 Enable Sound Effects
             </button>
             
-            {/* DEBUG: Sound File Test */}
-            <button
-              onClick={async () => {
-                console.log('🔊 Testing sound file directly...');
-                const soundData = currentProfile.sounds.generic[0];
-                console.log('🔍 Sound data length:', soundData.length);
-                console.log('🔍 Sound data preview:', soundData.substring(0, 100));
-                try {
-                  const audio = new Audio(soundData);
-                  audio.volume = 0.5;
-                  console.log('🔊 Attempting to play sound...');
-                  await audio.play();
-                  console.log('✅ Sound played successfully!');
-                } catch (error) {
-                  console.error('❌ Sound play failed:', error);
-                }
-              }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg mb-4 transition-colors duration-200 text-xs"
-            >
-              🧪 Test Sound File Directly
-            </button>
           </>
-        ) : (
+        ) : (hideAudioControls || audioInitialized) ? (
           <>
+            {/* AI Switch Selector - Compact */}
+            {enableAISelector && (
+              <div className="mb-4">
+                <AISwitchSoundSelector
+                  onProfileSelected={handleAIProfileSelected}
+                  currentProfile={SOUND_PROFILES[selectedProfile].name}
+                  className="mb-4"
+                />
+              </div>
+            )}
+
             {/* Profile Selector - Compact */}
-            <div className="mb-4">
+            <div className="mb-4 hidden">
               <select
                 value={selectedProfile}
                 onChange={(e) => {
@@ -546,8 +641,20 @@ export function MultiProfileKeyboardSounds({
               </select>
             </div>
 
+            {/* AI Analysis Result - Compact */}
+            {aiAnalysisResult && (
+              <div className="mb-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg">
+                <div className="text-purple-300 text-xs font-medium mb-1">
+                  🤖 AI Match: {aiAnalysisResult.confidence.toFixed(1)}/10 confidence
+                </div>
+                <div className="text-slate-400 text-xs">
+                  {aiAnalysisResult.reasoning}
+                </div>
+              </div>
+            )}
+
             {/* Status */}
-            <div className="text-center">
+            <div className="text-center hidden">
               <p className="text-green-400 text-sm font-medium mb-1">
                 ✅ {currentProfile.name}
               </p>
@@ -556,7 +663,7 @@ export function MultiProfileKeyboardSounds({
               </p>
             </div>
           </>
-        )}
+        ) : null}
       </div>
     );
   }
@@ -633,60 +740,6 @@ export function MultiProfileKeyboardSounds({
         </button>
       ) : (
         <>
-          {/* Test Buttons */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              onClick={() => playKeyboardSound('generic')}
-              disabled={isPlaying}
-              className={`py-3 px-4 rounded-lg font-medium transition-all duration-150 ${
-                currentlyPlayingKey === 'generic'
-                  ? 'bg-blue-700 transform scale-95' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-              } text-white text-sm`}
-            >
-              🎵 Test Sound (Mapped)
-            </button>
-            
-            {currentProfile.hasSpecialKeys && (
-              <>
-                <button
-                  onClick={() => playKeyboardSound('Space')}
-                  disabled={isPlaying}
-                  className={`py-3 px-4 rounded-lg font-medium transition-all duration-150 ${
-                    currentlyPlayingKey === 'Space'
-                      ? 'bg-purple-700 transform scale-95' 
-                      : 'bg-purple-600 hover:bg-purple-700'
-                  } text-white text-sm`}
-                >
-                  🚀 Space Bar
-                </button>
-                
-                <button
-                  onClick={() => playKeyboardSound('Enter')}
-                  disabled={isPlaying}
-                  className={`py-3 px-4 rounded-lg font-medium transition-all duration-150 ${
-                    currentlyPlayingKey === 'Enter'
-                      ? 'bg-emerald-700 transform scale-95' 
-                      : 'bg-emerald-600 hover:bg-emerald-700'
-                  } text-white text-sm`}
-                >
-                  ⏎ Enter Key
-                </button>
-                
-                <button
-                  onClick={() => playKeyboardSound('Backspace')}
-                  disabled={isPlaying}
-                  className={`py-3 px-4 rounded-lg font-medium transition-all duration-150 ${
-                    currentlyPlayingKey === 'Backspace'
-                      ? 'bg-red-700 transform scale-95' 
-                      : 'bg-red-600 hover:bg-red-700'
-                  } text-white text-sm`}
-                >
-                  ⌫ Backspace
-                </button>
-              </>
-            )}
-          </div>
 
           {/* Native iOS Keyboard Input */}
           <div className="bg-slate-800/30 p-6 rounded-xl border border-slate-700">

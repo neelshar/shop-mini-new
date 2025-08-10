@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { RealKeysim } from './components/RealKeysim'
 import { ComponentSearchModal } from './components/ComponentSearchModal'
 import { MultiProfileKeyboardSounds } from './components/MultiProfileKeyboardSounds'
+import { AutoSwitchMatcher } from './components/AutoSwitchMatcher'
+import { MinimalAudioToggle } from './components/MinimalAudioToggle'
+import { VirtualKeyboard } from './components/VirtualKeyboard'
 import { colorAnalysis } from './utils/colorAnalysis'
 
 // Types for our keyboard configuration
@@ -56,6 +59,9 @@ export function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [debugMode, setDebugMode] = useState(false)
+  const [currentSoundProfile, setCurrentSoundProfile] = useState<string>('holy-pandas')
+  const [autoSwitchAnalysisResult, setAutoSwitchAnalysisResult] = useState<any>(null)
+  const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false) // Start with audio muted
 
   // Case color options - used in both customizer and case-customizer
   const caseColorOptions = [
@@ -227,6 +233,55 @@ export function App() {
     const timer = setTimeout(() => setIsLoaded(true), 100)
     return () => clearTimeout(timer)
   }, [])
+
+  // Handle auto sound profile matching from switch selection
+  const handleAutoSoundProfileMatch = (profileId: string, analysisResult: any) => {
+    console.log('🤖 Auto-matched sound profile:', profileId, analysisResult);
+    setCurrentSoundProfile(profileId);
+    setAutoSwitchAnalysisResult(analysisResult);
+    
+    // Auto-unmute audio when user selects a switch
+    if (!isAudioEnabled) {
+      console.log('🔊 Auto-unmuting audio due to switch selection');
+      setIsAudioEnabled(true);
+    }
+  };
+
+  // Handle manual sound profile changes from the keyboard component
+  const handleSoundProfileChange = (profileId: string) => {
+    console.log('🔧 Manual sound profile change:', profileId);
+    setCurrentSoundProfile(profileId);
+  };
+
+  // Handle audio state changes
+  const handleAudioStateChange = (enabled: boolean) => {
+    console.log('🔊 App: Audio state change requested:', enabled);
+    setIsAudioEnabled(enabled);
+  };
+
+  // Always show audio toggle since we auto-initialize (determine if we have meaningful switch info)
+  const hasSelectedSwitch = true; // Always show now that we auto-initialize
+  
+  // Reference to the keyboard sound function
+  const [keyboardSoundFunction, setKeyboardSoundFunction] = useState<((key: string) => void) | null>(null);
+  const hasMeaningfulSwitch = selectedProducts.switches || keyboardConfig.switches !== 'tactile';
+  
+  // Get current switch name for display
+  const getCurrentSwitchName = () => {
+    if (selectedProducts.switches) {
+      return selectedProducts.switches.title || selectedProducts.switches.name || 'Selected Switch';
+    }
+    return `${keyboardConfig.switches.charAt(0).toUpperCase() + keyboardConfig.switches.slice(1)} Switch`;
+  };
+
+  // Debug logging for switch state
+  console.log('🔊 App: Switch state debug:', {
+    selectedProductsSwitch: selectedProducts.switches?.title || 'none',
+    keyboardConfigSwitches: keyboardConfig.switches,
+    hasSelectedSwitch,
+    getCurrentSwitchName: getCurrentSwitchName(),
+    isAudioEnabled
+  });
 
   // Handle product selection
   const handleProductSelect = (product: any, componentType: 'keycaps' | 'switches' | 'case') => {
@@ -974,18 +1029,118 @@ export function App() {
             </button>
           </div>
 
-          {/* Keyboard Sound System - Integrated */}
+          {/* Auto Switch Matcher - Detects user's switch selection and matches sound */}
+          <div className="mb-4 hidden">
+            <AutoSwitchMatcher
+              switchType={keyboardConfig.switches}
+              selectedSwitchProduct={selectedProducts.switches}
+              onSoundProfileMatched={handleAutoSoundProfileMatch}
+              currentSoundProfile={currentSoundProfile}
+              enableDebug={debugMode}
+              className="shadow-lg"
+            />
+          </div>
+
+          {/* AI-Powered Keyboard Sound System */}
           <div className="mb-8">
             <MultiProfileKeyboardSounds 
               compactMode={true}
+              enableAISelector={false} // Disabled since we have auto-matching above
+              externalProfile={currentSoundProfile} // Sync with auto-matched profile
+              onProfileChange={handleSoundProfileChange} // Handle manual changes
+              externalAudioEnabled={isAudioEnabled} // External audio control (mute/unmute)
+              onAudioStateChange={handleAudioStateChange} // Audio state changes
+              hideAudioControls={true} // Hide internal controls, use external toggle
+              autoInitialize={true} // Auto-initialize audio context in muted state
               className="shadow-lg"
               onSoundPlay={(profile, key) => {
                 console.log(`🎹 Sound played: ${profile} - ${key}`)
               }}
+              onVirtualKeyPress={(fn) => {
+                console.log('🎹 App received keyboard sound function:', !!fn);
+                setKeyboardSoundFunction(() => fn);
+              }}
             />
           </div>
 
-          {/* TEMPORARY DEBUG: AI Color Analysis Results */}
+          {/* Virtual Keyboard for Mobile Testing */}
+          <div className="mb-8">
+            <VirtualKeyboard 
+              onKeyPress={(key) => {
+                console.log('🎹 App received virtual key press:', key, 'Function available:', !!keyboardSoundFunction);
+                if (keyboardSoundFunction) {
+                  keyboardSoundFunction(key);
+                } else {
+                  console.log('❌ No keyboard sound function available');
+                }
+              }}
+              isAudioEnabled={isAudioEnabled}
+              className="shadow-lg"
+            />
+          </div>
+
+          {/* DEBUG: Auto Switch Analysis Results */}
+          {debugMode && autoSwitchAnalysisResult && (
+            <div className="mb-8 p-4 rounded-2xl bg-purple-900/20 border-2 border-purple-500/50">
+              <h3 className="text-purple-300 font-bold text-lg mb-4">🤖 DEBUG: Auto Switch Analysis</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-900/60 rounded-xl p-4">
+                  <h4 className="text-white font-medium mb-2">📡 Switch Detection</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Input:</span>
+                      <span className="text-white">{autoSwitchAnalysisResult.switchInput}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Type:</span>
+                      <span className="text-white">{autoSwitchAnalysisResult.switchType}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Analysis:</span>
+                      <span className="text-blue-400">{autoSwitchAnalysisResult.analysisType}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-slate-900/60 rounded-xl p-4">
+                  <h4 className="text-white font-medium mb-2">🎯 AI Match Result</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Matched:</span>
+                      <span className="text-green-400">{autoSwitchAnalysisResult.profileDetails?.name || autoSwitchAnalysisResult.matchedProfile}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Confidence:</span>
+                      <span className={autoSwitchAnalysisResult.confidence >= 7 ? 'text-green-400' : autoSwitchAnalysisResult.confidence >= 5 ? 'text-yellow-400' : 'text-red-400'}>
+                        {autoSwitchAnalysisResult.confidence?.toFixed(1) || 'N/A'}/10
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 p-2 bg-slate-800/50 rounded text-xs">
+                    <strong className="text-purple-300">Reasoning:</strong>
+                    <p className="text-slate-300 mt-1">
+                      {autoSwitchAnalysisResult.reasoning}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 text-center">
+                <button 
+                  onClick={() => {
+                    setAutoSwitchAnalysisResult(null);
+                  }}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                >
+                  Clear Analysis Data
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* DEBUG: AI Color Analysis Results */}
           {debugMode && (colorAnalysisResult || previewImage) && (
             <div className="mb-8 p-4 rounded-2xl bg-red-900/20 border-2 border-red-500/50">
               <h3 className="text-red-300 font-bold text-lg mb-4">🔧 DEBUG: AI Color Analysis Results</h3>
@@ -1297,6 +1452,14 @@ export function App() {
           currentConfig={keyboardConfig}
           onProductSelect={handleProductSelect}
           selectedProduct={selectedComponent ? selectedProducts[selectedComponent] : null}
+        />
+
+        {/* Minimal Audio Toggle - Bottom Left */}
+        <MinimalAudioToggle
+          onAudioStateChange={handleAudioStateChange}
+          isAudioEnabled={isAudioEnabled}
+          hasSelectedSwitch={hasSelectedSwitch}
+          currentSwitchName={getCurrentSwitchName()}
         />
 
         {/* Simple Cart Summary Modal */}
