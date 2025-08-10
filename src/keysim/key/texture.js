@@ -162,7 +162,14 @@ export const keyTexture = (opts) => {
     ent_off_y = 6;
   }
 
-  // GUARANTEED VISIBLE APPROACH - MAKE EVERYTHING BRIGHT AND OBVIOUS
+  // FLIP CANVAS COORDINATE SYSTEM TO FIX UPSIDE-DOWN TEXT
+  
+  // Save the current context state
+  ctx.save();
+  
+  // Transform coordinate system to flip vertically
+  ctx.scale(1, -1); // Flip Y axis
+  ctx.translate(0, -canvas.height); // Move origin back to top-left
   
   // First, fill the ENTIRE canvas with bright color so we know texture is applied
   ctx.fillStyle = '#00ff00'; // BRIGHT GREEN background for visibility
@@ -182,7 +189,7 @@ export const keyTexture = (opts) => {
   ctx.fillStyle = '#000000'; // BLACK text on green background for maximum contrast
   
   if (mainChar && mainChar.trim().length > 0) {
-    console.log('🔤 Drawing GUARANTEED VISIBLE character:', mainChar, 'for key:', key);
+    console.log('🔤 Drawing FLIPPED character:', mainChar, 'for key:', key);
     ctx.fillText(mainChar, canvas.width / 2, canvas.height / 2);
   } else {
     console.log('🔤 Drawing fallback "X" for key:', key);
@@ -195,13 +202,16 @@ export const keyTexture = (opts) => {
   ctx.arc(canvas.width - 20, 20, 10, 0, 2 * Math.PI);
   ctx.fill();
   
+  // Restore the context state
+  ctx.restore();
+  
   console.log('✅ Text drawing completed for key:', key);
 
   // Skip sub-characters for now to focus on main legends
 
   texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
-  texture.flipY = true; // FLIP TEXTURE TO CORRECT ORIENTATION
+  texture.flipY = false; // Don't flip texture since we're flipping the canvas drawing
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   

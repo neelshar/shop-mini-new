@@ -129,20 +129,20 @@ class LegacyGeometry {
       // Add indices
       indices.push(startIndex, startIndex + 1, startIndex + 2)
       
-      // Add UV coordinates - FLIP Y TO FIX UPSIDE-DOWN TEXT
+      // Add UV coordinates - NORMAL MAPPING (canvas is pre-flipped)
       if (this.faceVertexUvs && this.faceVertexUvs[0] && this.faceVertexUvs[0][faceIndex]) {
         const faceUvs = this.faceVertexUvs[0][faceIndex]
         faceUvs.forEach(uv => {
-          // FLIP Y coordinate to fix upside-down text (1.0 - y)
-          uvs.push(uv.x, 1.0 - uv.y)
+          // Use original UV coordinates since canvas is already flipped
+          uvs.push(uv.x, uv.y)
         })
-        console.log('✅ Added FLIPPED UV coordinates for face', faceIndex, ':', faceUvs.map(uv => `(${uv.x},${1.0 - uv.y})`))
+        console.log('✅ Added NORMAL UV coordinates for face', faceIndex, ':', faceUvs.map(uv => `(${uv.x},${uv.y})`))
       } else {
-        // Default UV coordinates with Y flipped to fix orientation
-        uvs.push(0, 0) // top-left (was bottom-left)
-        uvs.push(1, 0) // top-right (was bottom-right)  
-        uvs.push(0.5, 1) // bottom-center (was top-center)
-        console.log('⚠️ Using default FLIPPED UV coordinates for face', faceIndex)
+        // Default UV coordinates - normal mapping
+        uvs.push(0, 1) // bottom-left
+        uvs.push(1, 1) // bottom-right  
+        uvs.push(0.5, 0) // top-center
+        console.log('⚠️ Using default NORMAL UV coordinates for face', faceIndex)
       }
     })
     
