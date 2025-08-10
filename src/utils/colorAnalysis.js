@@ -4,9 +4,22 @@
 export class ColorAnalysisSystem {
   constructor() {
     // Switch to OpenAI GPT-4 Vision - much more browser-friendly
-    this.apiKey = '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';
+    this.apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     this.apiUrl = 'https://api.openai.com/v1/chat/completions';
     this.model = 'gpt-4o'; // Updated to current model with vision capabilities
+    
+    console.log('🔧 ColorAnalysisSystem Debug:');
+    console.log('  - Environment variables:', import.meta.env);
+    console.log('  - API Key found:', !!this.apiKey);
+    console.log('  - API Key length:', this.apiKey?.length || 0);
+    console.log('  - API Key prefix:', this.apiKey?.substring(0, 7) || 'none');
+    
+    if (!this.apiKey) {
+      console.error('❌ OpenAI API key not found in environment variables. Please set VITE_OPENAI_API_KEY in your .env file.');
+      console.error('Available environment variables:', Object.keys(import.meta.env));
+    } else {
+      console.log('✅ OpenAI API key loaded successfully');
+    }
   }
 
   /**
