@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PURE MONOCHROMATIC DESIGN SYSTEM */
+/* MONOCHROMATIC + BLUE GRADIENT DESIGN SYSTEM */
 :root {
   --bg-primary: #ffffff;
   --bg-secondary: #fafafa;
@@ -28,6 +28,13 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  
+  /* BLUE GRADIENT SYSTEM - Deep to Light Blues */
+  --gradient-deep-blue: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  --gradient-ocean-blue: linear-gradient(135deg, #1e40af 0%, #60a5fa 100%);
+  --gradient-sky-blue: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  --gradient-light-blue: linear-gradient(135deg, #60a5fa 0%, #dbeafe 100%);
+  --gradient-subtle-blue: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
 }
 
 /* CLEAN ANIMATIONS */
@@ -267,6 +274,27 @@
 
 .border-dark {
   border-color: var(--border-dark);
+}
+
+/* BLUE GRADIENT UTILITIES */
+.bg-gradient-deep-blue {
+  background: var(--gradient-deep-blue);
+}
+
+.bg-gradient-ocean-blue {
+  background: var(--gradient-ocean-blue);
+}
+
+.bg-gradient-sky-blue {
+  background: var(--gradient-sky-blue);
+}
+
+.bg-gradient-light-blue {
+  background: var(--gradient-light-blue);
+}
+
+.bg-gradient-subtle-blue {
+  background: var(--gradient-subtle-blue);
 }
 
 /* RESPONSIVE SPACING */
