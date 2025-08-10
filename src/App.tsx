@@ -231,48 +231,15 @@ export function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 1.6, ease: "easeOut" }}
           >
-            {/* Ultra-thin premium border */}
-            <motion.div 
-              className="relative p-px rounded-2xl bg-gradient-to-r from-slate-600/50 via-purple-500/80 to-slate-600/50"
-              animate={{
-                background: [
-                  "linear-gradient(90deg, rgba(100,116,139,0.5), rgba(147,51,234,0.9), rgba(100,116,139,0.5))",
-                  "linear-gradient(180deg, rgba(147,51,234,0.9), rgba(59,130,246,0.8), rgba(147,51,234,0.9))",
-                  "linear-gradient(270deg, rgba(59,130,246,0.8), rgba(100,116,139,0.5), rgba(59,130,246,0.8))",
-                  "linear-gradient(360deg, rgba(100,116,139,0.5), rgba(147,51,234,0.9), rgba(100,116,139,0.5))"
-                ]
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              {/* Subtle outer glow */}
-              <motion.div
-                className="absolute -inset-px rounded-2xl opacity-40 blur-sm"
-                animate={{
-                  background: [
-                    "linear-gradient(90deg, rgba(100,116,139,0.3), rgba(147,51,234,0.6), rgba(100,116,139,0.3))",
-                    "linear-gradient(180deg, rgba(147,51,234,0.6), rgba(59,130,246,0.5), rgba(147,51,234,0.6))",
-                    "linear-gradient(270deg, rgba(59,130,246,0.5), rgba(100,116,139,0.3), rgba(59,130,246,0.5))",
-                    "linear-gradient(360deg, rgba(100,116,139,0.3), rgba(147,51,234,0.6), rgba(100,116,139,0.3))"
-                  ]
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-              
+            {/* Container without gradients */}
+            <div className="relative">
               {/* Premium Button */}
               <motion.button
                 onClick={() => setCurrentPage('preferences')}
-                className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white font-bold px-16 py-5 text-lg rounded-2xl overflow-hidden w-full backdrop-blur-sm"
+                className="relative bg-transparent text-white font-semibold px-16 py-5 text-lg rounded-2xl overflow-hidden w-full border border-white/15"
                 whileHover={{ 
                   scale: 1.01,
-                  boxShadow: "0 20px 40px rgba(147, 51, 234, 0.3)"
+                  borderColor: "rgba(255,255,255,0.3)"
                 }}
                 whileTap={{ scale: 0.99 }}
                 transition={{ 
@@ -283,40 +250,13 @@ export function App() {
                 }}
                       style={{
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   letterSpacing: '0.02em'
                 }}
               >
-                {/* Subtle inner shimmer */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
-                  animate={{
-                    x: [-300, 300]
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    repeatDelay: 2
-                  }}
-                />
-                
-                {/* Inner gradient highlight */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent rounded-2xl"
-                  animate={{
-                    opacity: [0.3, 0.6, 0.3]
-                  }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-                
                 <span className="relative z-10 drop-shadow-lg">Start Building</span>
               </motion.button>
-            </motion.div>
+            </div>
           </motion.div>
                   </div>
                   </div>
