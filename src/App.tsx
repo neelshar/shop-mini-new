@@ -314,13 +314,54 @@ export function App() {
     return total > 0 ? total : 399
   }
 
+  // Reusable function to apply keycap color to 3D scene
+  const applyKeycapColorToScene = (color: string) => {
+    if ((window as any).scene) {
+      const scene = (window as any).scene
+      let keysUpdated = 0
+      
+      scene.traverse((object: any) => {
+        if (object.material && object.type === 'Mesh') {
+          const isKey = object.name?.toLowerCase().includes('key') || 
+                       object.parent?.name?.toLowerCase().includes('key') ||
+                       object.userData?.isKey === true
+          
+          if (isKey) {
+            console.log('🔑 Updating key:', object.name)
+            if (Array.isArray(object.material)) {
+              object.material.forEach((mat: any) => {
+                mat.color.setHex(parseInt(color.replace('#', '0x')))
+                mat.needsUpdate = true
+              })
+            } else {
+              object.material.color.setHex(parseInt(color.replace('#', '0x')))
+              object.material.needsUpdate = true
+            }
+            keysUpdated++
+          }
+        }
+      })
+      
+      console.log(`✅ Updated ${keysUpdated} key objects with color ${color}`)
+      
+      // Force re-render
+      if ((window as any).renderer && (window as any).camera) {
+        const renderer = (window as any).renderer
+        const camera = (window as any).camera
+        renderer.render(scene, camera)
+      }
+    } else {
+      console.error('❌ Scene not available!')
+    }
+  }
+
   // Handle color analysis
   const handleAnalyzeColors = async () => {
     setIsAnalyzing(true)
     console.log('🎨 Starting keyboard color analysis...')
     
     try {
-      // Just get and display the image for now
+      // Get product image
       const productImage = await colorAnalysis.getProductImage(selectedProducts)
       
       console.log('✅ Got product image:', productImage.substring(0, 50) + '...')
@@ -329,13 +370,34 @@ export function App() {
       // Store the image for display in the UI
       setPreviewImage(productImage)
       
-      alert('✅ Image loaded successfully!\nImage preview will show below the keyboard.')
+      // Perform AI color analysis
+      console.log('🤖 Starting AI color analysis...')
+      const analysisResult = await colorAnalysis.analyzeColorsWithLLM(productImage)
       
-      // TODO: Later we'll uncomment this to do actual analysis
-      // const result = await colorAnalysis.performColorAnalysis({
-      //   selectedProducts: selectedProducts,
-      //   skipCropping: true
-      // })
+      console.log('✅ AI analysis completed:', analysisResult)
+      setColorAnalysisResult(analysisResult)
+      
+      // Extract primary color and apply to keycaps
+      if (analysisResult && analysisResult.primary && analysisResult.primary.hex) {
+        const primaryColor = analysisResult.primary.hex
+        console.log('🎨 Applying primary color to keycaps:', primaryColor)
+        
+        // Update React state
+        setKeyboardConfig(prev => ({ ...prev, keycap_color: primaryColor }))
+        
+        // Apply to 3D model using reusable function
+        applyKeycapColorToScene(primaryColor)
+        
+        // Show success message with color details
+        alert(`🎨 AI Color Analysis Complete!\n\n` +
+              `Primary Color Applied: ${analysisResult.primary.name}\n` +
+              `Hex Code: ${primaryColor}\n` +
+              `Confidence: ${analysisResult.primary.confidence}/10\n\n` +
+              `The keycap color has been automatically applied to your 3D keyboard!`)
+      } else {
+        alert('✅ Analysis complete but no primary color found in results')
+      }
+      
     } catch (error) {
       console.error('❌ Color analysis error:', error)
       console.error('Error stack:', error.stack)
@@ -775,40 +837,167 @@ export function App() {
                 />
               </div>
               
-              <div className="mt-4 text-center">
+              <div className="mt-4 flex space-x-3 justify-center">
                 <button
                   onClick={async () => {
                     if (!previewImage) return;
                     
                     setIsAnalyzing(true);
                     try {
-                      console.log('🤖 Starting Claude API analysis...');
+                      console.log('🤖 Starting AI analysis...');
                       
-                      // Send the preview image to Claude API for analysis
+                      // Send the preview image to AI for analysis
                       const analysisResult = await colorAnalysis.analyzeColorsWithLLM(previewImage);
                       
-                      console.log('✅ Claude analysis completed:', analysisResult);
+                      console.log('✅ AI analysis completed:', analysisResult);
                       setColorAnalysisResult(analysisResult);
                       
                       // Show the results
-                      alert(`🎨 Colors detected by Claude AI!\n\nPrimary: ${analysisResult.primary.name} (${analysisResult.primary.hex})\nModifier: ${analysisResult.modifier.name} (${analysisResult.modifier.hex})\nAccent: ${analysisResult.accent.name} (${analysisResult.accent.hex})\n\nConfidence scores: ${analysisResult.primary.confidence}/10, ${analysisResult.modifier.confidence}/10, ${analysisResult.accent.confidence}/10`);
+                      alert(`🎨 Colors detected by AI!\n\nPrimary: ${analysisResult.primary.name} (${analysisResult.primary.hex})\nModifier: ${analysisResult.modifier?.name || 'N/A'} (${analysisResult.modifier?.hex || 'N/A'})\nAccent: ${analysisResult.accent?.name || 'N/A'} (${analysisResult.accent?.hex || 'N/A'})\n\nConfidence scores: ${analysisResult.primary.confidence}/10, ${analysisResult.modifier?.confidence || 0}/10, ${analysisResult.accent?.confidence || 0}/10`);
                       
                     } catch (error) {
-                      console.error('❌ Claude analysis failed:', error);
+                      console.error('❌ AI analysis failed:', error);
                       alert('❌ Analysis failed: ' + error.message);
                     } finally {
                       setIsAnalyzing(false);
                     }
                   }}
                   disabled={isAnalyzing}
-                  className={`font-medium py-2 px-6 rounded-lg transition-all duration-200 ${
+                  className={`font-medium py-2 px-4 rounded-lg transition-all duration-200 ${
                     isAnalyzing 
                       ? 'bg-violet-600/50 text-violet-300 cursor-not-allowed'
                       : 'bg-violet-600 hover:bg-violet-700 text-white'
                   }`}
                 >
-                  {isAnalyzing ? '🔄 Analyzing with Claude...' : '✨ Analyze This Image'}
+                  {isAnalyzing ? '🔄 Analyzing...' : '✨ Analyze Colors'}
                 </button>
+                
+                {colorAnalysisResult && colorAnalysisResult.primary && (
+                  <button
+                    onClick={() => {
+                      const primaryColor = colorAnalysisResult.primary.hex;
+                      console.log('🎨 Applying analyzed primary color:', primaryColor);
+                      
+                      // Update React state
+                      setKeyboardConfig(prev => ({ ...prev, keycap_color: primaryColor }));
+                      
+                      // Apply to 3D model
+                      applyKeycapColorToScene(primaryColor);
+                      
+                      alert(`✅ Applied primary color: ${colorAnalysisResult.primary.name} (${primaryColor}) to your keyboard!`);
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
+                  >
+                    🎨 Apply Primary Color
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Color Analysis Results Display */}
+          {colorAnalysisResult && (
+            <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-emerald-900/20 to-green-900/20 border border-emerald-700/30 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-emerald-300">🎨 AI Color Analysis Results</h3>
+                <button
+                  onClick={() => setColorAnalysisResult(null)}
+                  className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Primary Color */}
+                {colorAnalysisResult.primary && (
+                  <div className="bg-white/10 rounded-lg p-4">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div
+                        className="w-8 h-8 rounded-lg border-2 border-white/20"
+                        style={{ backgroundColor: colorAnalysisResult.primary.hex }}
+                      ></div>
+                      <div>
+                        <h4 className="text-white font-medium text-sm">Primary</h4>
+                        <p className="text-emerald-300 text-xs">{colorAnalysisResult.primary.name}</p>
+                      </div>
+                    </div>
+                    <p className="text-slate-300 text-xs mb-2">{colorAnalysisResult.primary.hex}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-400">Confidence: {colorAnalysisResult.primary.confidence}/10</span>
+                      <button
+                        onClick={() => {
+                          setKeyboardConfig(prev => ({ ...prev, keycap_color: colorAnalysisResult.primary.hex }));
+                          applyKeycapColorToScene(colorAnalysisResult.primary.hex);
+                          alert(`✅ Applied ${colorAnalysisResult.primary.name} to keycaps!`);
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2 py-1 rounded transition-all duration-200"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modifier Color */}
+                {colorAnalysisResult.modifier && (
+                  <div className="bg-white/10 rounded-lg p-4">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div
+                        className="w-8 h-8 rounded-lg border-2 border-white/20"
+                        style={{ backgroundColor: colorAnalysisResult.modifier.hex }}
+                      ></div>
+                      <div>
+                        <h4 className="text-white font-medium text-sm">Modifier</h4>
+                        <p className="text-emerald-300 text-xs">{colorAnalysisResult.modifier.name}</p>
+                      </div>
+                    </div>
+                    <p className="text-slate-300 text-xs mb-2">{colorAnalysisResult.modifier.hex}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-400">Confidence: {colorAnalysisResult.modifier.confidence}/10</span>
+                      <button
+                        onClick={() => {
+                          setKeyboardConfig(prev => ({ ...prev, keycap_color: colorAnalysisResult.modifier.hex }));
+                          applyKeycapColorToScene(colorAnalysisResult.modifier.hex);
+                          alert(`✅ Applied ${colorAnalysisResult.modifier.name} to keycaps!`);
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2 py-1 rounded transition-all duration-200"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Accent Color */}
+                {colorAnalysisResult.accent && (
+                  <div className="bg-white/10 rounded-lg p-4">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div
+                        className="w-8 h-8 rounded-lg border-2 border-white/20"
+                        style={{ backgroundColor: colorAnalysisResult.accent.hex }}
+                      ></div>
+                      <div>
+                        <h4 className="text-white font-medium text-sm">Accent</h4>
+                        <p className="text-emerald-300 text-xs">{colorAnalysisResult.accent.name}</p>
+                      </div>
+                    </div>
+                    <p className="text-slate-300 text-xs mb-2">{colorAnalysisResult.accent.hex}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-400">Confidence: {colorAnalysisResult.accent.confidence}/10</span>
+                      <button
+                        onClick={() => {
+                          setKeyboardConfig(prev => ({ ...prev, keycap_color: colorAnalysisResult.accent.hex }));
+                          applyKeycapColorToScene(colorAnalysisResult.accent.hex);
+                          alert(`✅ Applied ${colorAnalysisResult.accent.name} to keycaps!`);
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2 py-1 rounded transition-all duration-200"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1144,46 +1333,10 @@ export function App() {
       // Update React state
       setKeyboardConfig(prev => ({ ...prev, keycap_color: newColor }))
       
-      // Simple approach: Try to find and update key materials directly
-      if ((window as any).scene) {
-        const scene = (window as any).scene
-        let keysUpdated = 0
-        
-        scene.traverse((object: any) => {
-          // Look for key objects more broadly
-          if (object.material && object.type === 'Mesh') {
-            const isKey = object.name?.toLowerCase().includes('key') || 
-                         object.parent?.name?.toLowerCase().includes('key') ||
-                         object.userData?.isKey === true
-            
-            if (isKey) {
-              console.log('🔑 Updating key:', object.name)
-              if (Array.isArray(object.material)) {
-                object.material.forEach((mat: any) => {
-                  mat.color.setHex(parseInt(newColor.replace('#', '0x')))
-                  mat.needsUpdate = true
-                })
-              } else {
-                object.material.color.setHex(parseInt(newColor.replace('#', '0x')))
-                object.material.needsUpdate = true
-              }
-              keysUpdated++
-            }
-          }
-        })
-        
-        console.log(`✅ Updated ${keysUpdated} key objects`)
-        
-        // Force re-render
-        if ((window as any).renderer && (window as any).camera) {
-          const renderer = (window as any).renderer
-          const camera = (window as any).camera
-          renderer.render(scene, camera)
-        }
-      } else {
-        console.error('❌ Scene not available!')
-      }
+      // Apply to 3D scene
+      applyKeycapColorToScene(newColor)
     }
+
 
 
     return (
