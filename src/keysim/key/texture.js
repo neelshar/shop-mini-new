@@ -97,8 +97,7 @@ export const keyTexture = (opts) => {
   // ctx.fillStyle = shineBottom;
   // ctx.fillRect(canvas.width * highlightRatio, 0, canvas.width, canvas.height);
 
-  // SIMPLE CHARACTER MAPPING - NO CUSTOM FONTS
-  // Create a simple mapping from key codes to actual characters
+  // COMPLETE CHARACTER MAPPING - INCLUDING MULTI-CHARACTER KEYS
   const SIMPLE_CHAR_MAP = {
     'KC_A': 'A', 'KC_B': 'B', 'KC_C': 'C', 'KC_D': 'D', 'KC_E': 'E', 'KC_F': 'F',
     'KC_G': 'G', 'KC_H': 'H', 'KC_I': 'I', 'KC_J': 'J', 'KC_K': 'K', 'KC_L': 'L',
@@ -115,7 +114,12 @@ export const keyTexture = (opts) => {
     'KC_F5': 'F5', 'KC_F6': 'F6', 'KC_F7': 'F7', 'KC_F8': 'F8',
     'KC_F9': 'F9', 'KC_F10': 'F10', 'KC_F11': 'F11', 'KC_F12': 'F12',
     'KC_LSFT': 'Shift', 'KC_RSFT': 'Shift', 'KC_LCTL': 'Ctrl', 'KC_RCTL': 'Ctrl',
-    'KC_LALT': 'Alt', 'KC_RALT': 'Alt', 'KC_LGUI': 'Super', 'KC_RGUI': 'Super'
+    'KC_LALT': 'Alt', 'KC_RALT': 'Alt', 'KC_LGUI': 'Super', 'KC_RGUI': 'Super',
+    // NAVIGATION AND SPECIAL KEYS WITH PROPER LABELS
+    'KC_UP': 'UP', 'KC_DOWN': 'DOWN', 'KC_LEFT': 'LEFT', 'KC_RGHT': 'RIGHT',
+    'KC_INS': 'INS', 'KC_DEL': 'DEL', 'KC_HOME': 'HOME', 'KC_END': 'END',
+    'KC_PGUP': 'PG UP', 'KC_PGDN': 'PG DN', 'KC_PSCR': 'PSCR', 'KC_SLCK': 'SLCK',
+    'KC_PAUS': 'PAUSE', 'KC_NUM': 'NUM', 'KC_MENU': 'MENU'
   };
   
   // Get the simple character
@@ -128,14 +132,7 @@ export const keyTexture = (opts) => {
     available: !!SIMPLE_CHAR_MAP[key]
   });
 
-  // SIMPLE FONT SETUP
-  let fontSize = mainChar.length > 3 ? 24 : 48; // Smaller font for longer text like "Shift"
-  let fontFamily = 'Arial, sans-serif'; // Use system font
-  
-  ctx.font = `bold ${fontSize}px ${fontFamily}`;
-  
-  // FORCE WHITE TEXT FOR LEGENDS (override fg color)
-  ctx.fillStyle = '#ffffff'; // Force white legends like in real KeySim
+  // Old font setup removed - using dynamic sizing below
   
   // DEBUGGING: Draw a test red dot to see if text drawing works
   ctx.fillStyle = '#ff0000';
@@ -180,10 +177,37 @@ export const keyTexture = (opts) => {
   ctx.lineWidth = 8;
   ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
   
-  // Set up text properties
+  // Set up text properties with DYNAMIC FONT SIZING
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 60px Arial'; // HUGE font
+  
+  // SMART DYNAMIC FONT SIZING for multi-character keys
+  let fontSize = 60; // Default large font for single characters
+  
+  if (mainChar && mainChar.length > 1) {
+    // Base font size by character count
+    if (mainChar.length === 2) {
+      fontSize = 45; // 2 chars: UP, INS, etc.
+    } else if (mainChar.length === 3) {
+      fontSize = 36; // 3 chars: DEL, END, etc.
+    } else if (mainChar.length === 4) {
+      fontSize = 28; // 4 chars: HOME, DOWN, etc.
+    } else if (mainChar.length >= 5) {
+      fontSize = 24; // 5+ chars: PAUSE, SHIFT, etc.
+    }
+    
+    // Additional scaling based on actual key dimensions
+    const maxFontByWidth = (canvas.width * 0.8) / mainChar.length;
+    const maxFontByHeight = canvas.height * 0.5;
+    
+    fontSize = Math.min(fontSize, maxFontByWidth, maxFontByHeight);
+    
+    // Ensure minimum readable size
+    fontSize = Math.max(fontSize, 16);
+  }
+  
+  ctx.font = `bold ${fontSize}px Arial`;
+  console.log('🔤 Font size for', mainChar, ':', fontSize + 'px');
   
   // Draw text with high contrast
   ctx.fillStyle = '#000000'; // BLACK text on green background for maximum contrast
