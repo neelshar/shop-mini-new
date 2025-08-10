@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { RealKeysim } from './components/RealKeysim'
+import { ComponentSearchModal } from './components/ComponentSearchModal'
 
 // Types for our keyboard configuration
 interface KeyboardConfig {
@@ -16,6 +17,8 @@ interface KeyboardConfig {
 
 type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer'
 
+
+
 export function App() {
   const [currentPage, setCurrentPage] = useState<AppPage>('welcome')
   const [keyboardConfig, setKeyboardConfig] = useState<KeyboardConfig>({
@@ -30,12 +33,63 @@ export function App() {
     switch_color: '#ffa726' // Default tactile orange
   })
   const [isLoaded, setIsLoaded] = useState(false)
+  
+  // Product search/select states
+  const [selectedComponent, setSelectedComponent] = useState<'keycaps' | 'switches' | 'case' | null>(null)
+  const [selectedProducts, setSelectedProducts] = useState<{
+    keycaps: any | null
+    switches: any | null
+    case: any | null
+  }>({
+    keycaps: null,
+    switches: null,
+    case: null
+  })
+
+  // Simple cart state
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
   useEffect(() => {
     // Trigger animations after component mounts
     const timer = setTimeout(() => setIsLoaded(true), 100)
     return () => clearTimeout(timer)
   }, [])
+
+  // Handle product selection
+  const handleProductSelect = (product: any, componentType: 'keycaps' | 'switches' | 'case') => {
+    console.log(`Selected ${componentType}:`, product)
+    console.log('Product price structure:', {
+      priceRange: product.priceRange,
+      minVariantPrice: product.priceRange?.minVariantPrice,
+      amount: product.priceRange?.minVariantPrice?.amount
+    })
+    setSelectedProducts(prev => ({
+      ...prev,
+      [componentType]: product
+    }))
+  }
+
+  // Simple cart calculation
+  const calculateCartTotal = () => {
+    let total = 0
+    
+    const getPrice = (product: any) => {
+      if (!product) return 0
+      const price = product.priceRange?.minVariantPrice?.amount ||
+                   product.priceRange?.min?.amount ||
+                   product.variants?.[0]?.priceV2?.amount ||
+                   product.variants?.[0]?.price ||
+                   product.price?.amount ||
+                   product.price
+      return price ? parseFloat(price) : 0
+    }
+    
+    if (selectedProducts.keycaps) total += getPrice(selectedProducts.keycaps)
+    if (selectedProducts.switches) total += getPrice(selectedProducts.switches)
+    if (selectedProducts.case) total += getPrice(selectedProducts.case)
+    
+    return total > 0 ? total : 399
+  }
 
   // Welcome/Landing Page with INSANE animations
   if (currentPage === 'welcome') {
@@ -391,32 +445,32 @@ export function App() {
 
   // Builder Page - Shows 3D Keyboard with Basic Config
   if (currentPage === 'builder') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
-        <div className="pt-4 px-4 pb-24">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setCurrentPage('preferences')}
-                className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <div>
-                <h1 className="text-xl font-semibold text-white">Your Keyboard</h1>
-                <p className="text-slate-400 text-sm">Based on your preferences</p>
-              </div>
-            </div>
-            
-            <button className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
+      <div className="pt-4 px-4 pb-24">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentPage('preferences')}
+              className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13h10m-5 5a1 1 0 100 2 1 1 0 000-2zm5 0a1 1 0 100 2 1 1 0 000-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
+            <div>
+                <h1 className="text-xl font-semibold text-white">Your Keyboard</h1>
+                <p className="text-slate-400 text-sm">Based on your preferences</p>
+            </div>
           </div>
+          
+          <button className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13h10m-5 5a1 1 0 100 2 1 1 0 000-2zm5 0a1 1 0 100 2 1 1 0 000-2z" />
+            </svg>
+          </button>
+        </div>
 
           {/* 3D KeySim Viewer - REAL from GitHub */}
           <div className="mb-8 h-80 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-800/60 border border-slate-700/50 backdrop-blur-sm relative overflow-hidden">
@@ -434,37 +488,145 @@ export function App() {
           </div>
 
           {/* Component Details */}
-          <div className="space-y-4 mb-8">
+          <div className="space-y-4 mb-32 relative z-20">
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+              {/* Keycaps - Clickable */}
+              <button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Keycaps button clicked!')
+                  setSelectedComponent('keycaps')
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Keycaps button touched!')
+                  setSelectedComponent('keycaps')
+                }}
+                className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-900/60 hover:border-blue-500/50 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation"
+              >
                 <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <h3 className="text-white font-medium text-sm">Keycaps</h3>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full group-hover:scale-110 transition-transform"></div>
+                  <h3 className="text-white font-medium text-sm group-hover:text-blue-300 transition-colors">Keycaps</h3>
+                  <svg className="w-3 h-3 text-slate-500 group-hover:text-blue-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
-                <p className="text-slate-400 text-xs">{keyboardConfig.keycaps.toUpperCase()} Profile</p>
-                <p className="text-slate-500 text-xs mt-1">Premium quality</p>
-              </div>
+                {selectedProducts.keycaps ? (
+                  <>
+                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.keycaps.title}</p>
+                    <p className="text-green-400 text-xs mt-1">${(() => {
+                      const product = selectedProducts.keycaps
+                      return product.priceRange?.minVariantPrice?.amount ||
+                             product.priceRange?.min?.amount ||
+                             product.variants?.[0]?.priceV2?.amount ||
+                             product.variants?.[0]?.price ||
+                             product.price?.amount ||
+                             product.price ||
+                             'N/A'
+                    })()}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.keycaps.toUpperCase()} Profile</p>
+                    <p className="text-slate-500 text-xs mt-1 group-hover:text-blue-400/70 transition-colors">Click to shop</p>
+                  </>
+                )}
+              </button>
               
-              <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+              {/* Switches - Clickable */}
+              <button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Switches button clicked!')
+                  setSelectedComponent('switches')
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Switches button touched!')
+                  setSelectedComponent('switches')
+                }}
+                className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-900/60 hover:border-amber-500/50 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation"
+              >
                 <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                  <h3 className="text-white font-medium text-sm">Switches</h3>
+                  <div className="w-3 h-3 bg-amber-500 rounded-full group-hover:scale-110 transition-transform"></div>
+                  <h3 className="text-white font-medium text-sm group-hover:text-amber-300 transition-colors">Switches</h3>
+                  <svg className="w-3 h-3 text-slate-500 group-hover:text-amber-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
-                <p className="text-slate-400 text-xs">{keyboardConfig.switches} Type</p>
-                <p className="text-slate-500 text-xs mt-1">Optimized feel</p>
-              </div>
+                {selectedProducts.switches ? (
+                  <>
+                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.switches.title}</p>
+                    <p className="text-green-400 text-xs mt-1">${(() => {
+                      const product = selectedProducts.switches
+                      return product.priceRange?.minVariantPrice?.amount ||
+                             product.priceRange?.min?.amount ||
+                             product.variants?.[0]?.priceV2?.amount ||
+                             product.variants?.[0]?.price ||
+                             product.price?.amount ||
+                             product.price ||
+                             'N/A'
+                    })()}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.switches} Type</p>
+                    <p className="text-slate-500 text-xs mt-1 group-hover:text-amber-400/70 transition-colors">Click to shop</p>
+                  </>
+                )}
+              </button>
               
-              <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
+              {/* Case - Clickable */}
+              <button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Case button clicked!')
+                  setSelectedComponent('case')
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Case button touched!')
+                  setSelectedComponent('case')
+                }}
+                className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-900/60 hover:border-slate-400/50 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation"
+              >
                 <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
-                  <h3 className="text-white font-medium text-sm">Case</h3>
+                  <div className="w-3 h-3 bg-slate-500 rounded-full group-hover:scale-110 transition-transform"></div>
+                  <h3 className="text-white font-medium text-sm group-hover:text-slate-300 transition-colors">Case</h3>
+                  <svg className="w-3 h-3 text-slate-500 group-hover:text-slate-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
-                <p className="text-slate-400 text-xs">{keyboardConfig.case} Material</p>
-                <p className="text-slate-500 text-xs mt-1">Durable build</p>
-              </div>
+                {selectedProducts.case ? (
+                  <>
+                    <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.case.title}</p>
+                    <p className="text-green-400 text-xs mt-1">${(() => {
+                      const product = selectedProducts.case
+                      return product.priceRange?.minVariantPrice?.amount ||
+                             product.priceRange?.min?.amount ||
+                             product.variants?.[0]?.priceV2?.amount ||
+                             product.variants?.[0]?.price ||
+                             product.price?.amount ||
+                             product.price ||
+                             'N/A'
+                    })()}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-400 text-xs group-hover:text-slate-300 transition-colors">{keyboardConfig.case} Material</p>
+                    <p className="text-slate-500 text-xs mt-1 group-hover:text-slate-400/70 transition-colors">Click to shop</p>
+                  </>
+                )}
+              </button>
             </div>
           </div>
-
+          
           {/* Fixed Bottom Actions */}
           <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
             <div className="flex space-x-3">
@@ -474,12 +636,145 @@ export function App() {
               >
                 Customize Colors
               </button>
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200 flex items-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H17M9 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM20 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                </svg>
+                <span>Cart</span>
+              </button>
               <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200">
-                Add to Cart - $399
+                Add to Cart - ${calculateCartTotal().toFixed(2)}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Component Search Modal */}
+        <ComponentSearchModal
+          isOpen={selectedComponent !== null}
+          onClose={() => setSelectedComponent(null)}
+          componentType={selectedComponent}
+          currentConfig={keyboardConfig}
+          onProductSelect={handleProductSelect}
+          selectedProduct={selectedComponent ? selectedProducts[selectedComponent] : null}
+        />
+
+        {/* Simple Cart Summary Modal */}
+        {isCartOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-950 w-full max-w-md rounded-2xl border border-slate-800/50 overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H17M9 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM20 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-white font-semibold text-lg">Cart Summary</h2>
+                    <p className="text-slate-400 text-sm">Your keyboard build</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  className="w-8 h-8 bg-slate-800/50 hover:bg-slate-700/50 rounded-lg flex items-center justify-center transition-all duration-200"
+                >
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Cart Items */}
+              <div className="p-6 space-y-4">
+                {selectedProducts.keycaps && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-white text-sm">Keycaps</span>
+                    </div>
+                    <span className="text-green-400 font-medium text-sm">
+                      ${(() => {
+                        const price = selectedProducts.keycaps.priceRange?.minVariantPrice?.amount ||
+                                     selectedProducts.keycaps.priceRange?.min?.amount ||
+                                     selectedProducts.keycaps.variants?.[0]?.priceV2?.amount ||
+                                     selectedProducts.keycaps.variants?.[0]?.price ||
+                                     selectedProducts.keycaps.price?.amount ||
+                                     selectedProducts.keycaps.price
+                        return price ? parseFloat(price).toFixed(2) : '0.00'
+                      })()}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedProducts.switches && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                      <span className="text-white text-sm">Switches</span>
+                    </div>
+                    <span className="text-green-400 font-medium text-sm">
+                      ${(() => {
+                        const price = selectedProducts.switches.priceRange?.minVariantPrice?.amount ||
+                                     selectedProducts.switches.priceRange?.min?.amount ||
+                                     selectedProducts.switches.variants?.[0]?.priceV2?.amount ||
+                                     selectedProducts.switches.variants?.[0]?.price ||
+                                     selectedProducts.switches.price?.amount ||
+                                     selectedProducts.switches.price
+                        return price ? parseFloat(price).toFixed(2) : '0.00'
+                      })()}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedProducts.case && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
+                      <span className="text-white text-sm">Case</span>
+                    </div>
+                    <span className="text-green-400 font-medium text-sm">
+                      ${(() => {
+                        const price = selectedProducts.case.priceRange?.minVariantPrice?.amount ||
+                                     selectedProducts.case.priceRange?.min?.amount ||
+                                     selectedProducts.case.variants?.[0]?.priceV2?.amount ||
+                                     selectedProducts.case.variants?.[0]?.price ||
+                                     selectedProducts.case.price?.amount ||
+                                     selectedProducts.case.price
+                        return price ? parseFloat(price).toFixed(2) : '0.00'
+                      })()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Totals */}
+                <div className="border-t border-slate-700/50 pt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Subtotal</span>
+                    <span className="text-white">${calculateCartTotal().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Tax (8%)</span>
+                    <span className="text-white">${(calculateCartTotal() * 0.08).toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-slate-700/50 pt-2 flex justify-between">
+                    <span className="text-white font-semibold">Total</span>
+                    <span className="text-white font-semibold text-lg">${(calculateCartTotal() * 1.08).toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Checkout Button */}
+                <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25 active:scale-95">
+                  Proceed to Checkout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -528,8 +823,8 @@ export function App() {
               keycapColor={keyboardConfig.keycap_color}
               switchColor={keyboardConfig.switch_color}
             />
-          </div>
-
+            </div>
+            
           {/* Color Customization */}
           <div className="space-y-6">
             {/* Case Color */}
@@ -552,7 +847,7 @@ export function App() {
                 ))}
               </div>
             </div>
-
+            
             {/* Keycap Color */}
             <div>
               <h3 className="text-white font-medium mb-3">Keycap Color</h3>
@@ -573,7 +868,7 @@ export function App() {
                 ))}
               </div>
             </div>
-
+            
             {/* Switch Color */}
             <div>
               <h3 className="text-white font-medium mb-3">Switch Color</h3>
@@ -592,28 +887,29 @@ export function App() {
                     <span className="sr-only">{color.name}</span>
                   </button>
                 ))}
-              </div>
             </div>
           </div>
+        </div>
 
-          {/* Fixed Bottom Actions */}
-          <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
-            <div className="flex space-x-3">
+        {/* Fixed Bottom Actions */}
+        <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
+          <div className="flex space-x-3">
               <button 
                 onClick={() => setCurrentPage('builder')}
                 className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200"
               >
                 Back
-              </button>
-              <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200">
-                Add to Cart - $399
-              </button>
-            </div>
+            </button>
+            <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200">
+              Add to Cart - $399
+            </button>
           </div>
         </div>
       </div>
-    )
+    </div>
+  )
   }
 
+  // This should never be reached, but just in case
   return null
 }

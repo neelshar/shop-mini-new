@@ -4,7 +4,7 @@ import './index.css'
 import './keysim-safe.css'
 import {MinisContainer} from '@shopify/shop-minis-react'
 
-import {App} from './App.jsx'
+import {App} from './App'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

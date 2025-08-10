@@ -3,6 +3,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* Custom animations for the Keyboard Mini */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
