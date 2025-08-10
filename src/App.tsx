@@ -273,7 +273,7 @@ export function App() {
         <div className="relative z-10 min-h-screen flex flex-col px-6 py-8">
           {/* Magical Header */}
           <motion.div 
-            className="text-center mb-12"
+            className="text-center mb-8"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
@@ -325,7 +325,7 @@ export function App() {
             
             {/* Engaging subtitle with fade-in */}
             <motion.p 
-              className="text-lg text-gray-300 max-w-xl mx-auto leading-relaxed font-light mb-16"
+              className="text-lg text-gray-300 max-w-xl mx-auto leading-relaxed font-light mb-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
@@ -339,7 +339,7 @@ export function App() {
 
             {/* Magical divider */}
             <motion.div 
-              className="relative mx-auto mb-8 flex items-center justify-center"
+              className="relative mx-auto mb-4 flex items-center justify-center"
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
               transition={{ duration: 1.5, delay: 0.6, ease: "easeOut" }}
@@ -376,7 +376,7 @@ export function App() {
 
           {/* Preference Sections with Glassmorphism */}
           <div className="flex-1 max-w-5xl mx-auto w-full">
-            <div className="space-y-12">
+            <div className="space-y-6">
               
                                           {/* Layout Selection - Glassmorphic Section */}
               <motion.div
