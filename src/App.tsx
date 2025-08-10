@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { RealKeysim } from './components/RealKeysim'
 import { ComponentSearchModal } from './components/ComponentSearchModal'
+import { colorAnalysis } from './utils/colorAnalysis'
 
 // Types for our keyboard configuration
 interface KeyboardConfig {
@@ -48,6 +49,11 @@ export function App() {
 
   // Simple cart state
   const [isCartOpen, setIsCartOpen] = useState(false)
+
+  // Color analysis state
+  const [colorAnalysisResult, setColorAnalysisResult] = useState<any>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
 
   // Case color options - used in both customizer and case-customizer
   const caseColorOptions = [
@@ -306,6 +312,44 @@ export function App() {
     if (selectedProducts.case) total += getPrice(selectedProducts.case)
     
     return total > 0 ? total : 399
+  }
+
+  // Handle color analysis
+  const handleAnalyzeColors = async () => {
+    setIsAnalyzing(true)
+    console.log('🎨 Starting keyboard color analysis...')
+    
+    try {
+      // Just get and display the image for now
+      const productImage = await colorAnalysis.getProductImage(selectedProducts)
+      
+      console.log('✅ Got product image:', productImage.substring(0, 50) + '...')
+      console.log('🖼️ Image data length:', productImage.length, 'bytes')
+      
+      // Store the image for display in the UI
+      setPreviewImage(productImage)
+      
+      alert('✅ Image loaded successfully!\nImage preview will show below the keyboard.')
+      
+      // TODO: Later we'll uncomment this to do actual analysis
+      // const result = await colorAnalysis.performColorAnalysis({
+      //   selectedProducts: selectedProducts,
+      //   skipCropping: true
+      // })
+    } catch (error) {
+      console.error('❌ Color analysis error:', error)
+      console.error('Error stack:', error.stack)
+      
+      // Show detailed error information
+      let errorMessage = 'Color analysis failed: ' + error.message
+      if (error.message.includes('Load failed')) {
+        errorMessage += '\n\nPossible causes:\n- Canvas rendering issue\n- Image processing error\n- Network connectivity\n- Check browser console for details'
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   // Welcome/Landing Page with INSANE animations
@@ -704,6 +748,71 @@ export function App() {
             </div>
           </div>
 
+          {/* Image Preview for Color Analysis */}
+          {previewImage && (
+            <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-violet-900/20 to-purple-900/20 border border-violet-700/30 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-violet-300">🖼️ Image for Color Analysis</h3>
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="text-violet-400 hover:text-violet-300 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="mb-4 text-sm text-slate-400">
+                <p><strong>Source:</strong> {selectedProducts?.keycaps ? 'Selected keycaps product' : '3D scene fallback'}</p>
+                <p><strong>Size:</strong> {Math.round(previewImage.length / 1024)} KB</p>
+                <p><strong>Status:</strong> ✅ Ready for analysis</p>
+              </div>
+              
+              <div className="rounded-xl overflow-hidden border border-violet-700/20">
+                <img 
+                  src={previewImage} 
+                  alt="Keycaps for color analysis" 
+                  className="w-full max-h-64 object-contain bg-white/10"
+                />
+              </div>
+              
+              <div className="mt-4 text-center">
+                <button
+                  onClick={async () => {
+                    if (!previewImage) return;
+                    
+                    setIsAnalyzing(true);
+                    try {
+                      console.log('🤖 Starting Claude API analysis...');
+                      
+                      // Send the preview image to Claude API for analysis
+                      const analysisResult = await colorAnalysis.analyzeColorsWithLLM(previewImage);
+                      
+                      console.log('✅ Claude analysis completed:', analysisResult);
+                      setColorAnalysisResult(analysisResult);
+                      
+                      // Show the results
+                      alert(`🎨 Colors detected by Claude AI!\n\nPrimary: ${analysisResult.primary.name} (${analysisResult.primary.hex})\nModifier: ${analysisResult.modifier.name} (${analysisResult.modifier.hex})\nAccent: ${analysisResult.accent.name} (${analysisResult.accent.hex})\n\nConfidence scores: ${analysisResult.primary.confidence}/10, ${analysisResult.modifier.confidence}/10, ${analysisResult.accent.confidence}/10`);
+                      
+                    } catch (error) {
+                      console.error('❌ Claude analysis failed:', error);
+                      alert('❌ Analysis failed: ' + error.message);
+                    } finally {
+                      setIsAnalyzing(false);
+                    }
+                  }}
+                  disabled={isAnalyzing}
+                  className={`font-medium py-2 px-6 rounded-lg transition-all duration-200 ${
+                    isAnalyzing 
+                      ? 'bg-violet-600/50 text-violet-300 cursor-not-allowed'
+                      : 'bg-violet-600 hover:bg-violet-700 text-white'
+                  }`}
+                >
+                  {isAnalyzing ? '🔄 Analyzing with Claude...' : '✨ Analyze This Image'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Component Details */}
           <div className="space-y-4 mb-32 relative z-20">
             <div className="grid grid-cols-3 gap-4">
@@ -858,6 +967,17 @@ export function App() {
                 className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-3 rounded-xl hover:bg-slate-900/80 transition-all duration-200 text-sm"
               >
                 Customize Case
+              </button>
+              <button 
+                onClick={handleAnalyzeColors}
+                disabled={isAnalyzing}
+                className={`flex-1 border font-medium py-3 px-3 rounded-xl transition-all duration-200 text-sm ${
+                  isAnalyzing 
+                    ? 'bg-violet-900/30 border-violet-700/30 text-violet-500 cursor-not-allowed'
+                    : 'bg-violet-900/60 border-violet-700/50 text-violet-300 hover:bg-violet-900/80'
+                }`}
+              >
+                {isAnalyzing ? '🔄 Analyzing...' : '🤖 Analyze Colors'}
               </button>
               <button
                 onClick={() => setIsCartOpen(true)}
