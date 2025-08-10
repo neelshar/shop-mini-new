@@ -104,6 +104,66 @@ class LegacyGeometry {
     )
     return cloned
   }
+
+  toBufferGeometry() {
+    console.log('🔄 Converting LegacyGeometry to BufferGeometry with UV mapping...')
+    
+    const bufferGeometry = new THREE_BASE.BufferGeometry()
+    
+    // Convert vertices
+    const positions = []
+    const uvs = []
+    const indices = []
+    
+    this.faces.forEach((face, faceIndex) => {
+      const a = this.vertices[face.a]
+      const b = this.vertices[face.b] 
+      const c = this.vertices[face.c]
+      
+      // Add vertices
+      const startIndex = positions.length / 3
+      positions.push(a.x, a.y, a.z)
+      positions.push(b.x, b.y, b.z)
+      positions.push(c.x, c.y, c.z)
+      
+      // Add indices
+      indices.push(startIndex, startIndex + 1, startIndex + 2)
+      
+      // Add UV coordinates - FLIP Y TO FIX UPSIDE-DOWN TEXT
+      if (this.faceVertexUvs && this.faceVertexUvs[0] && this.faceVertexUvs[0][faceIndex]) {
+        const faceUvs = this.faceVertexUvs[0][faceIndex]
+        faceUvs.forEach(uv => {
+          // FLIP Y coordinate to fix upside-down text (1.0 - y)
+          uvs.push(uv.x, 1.0 - uv.y)
+        })
+        console.log('✅ Added FLIPPED UV coordinates for face', faceIndex, ':', faceUvs.map(uv => `(${uv.x},${1.0 - uv.y})`))
+      } else {
+        // Default UV coordinates with Y flipped to fix orientation
+        uvs.push(0, 0) // top-left (was bottom-left)
+        uvs.push(1, 0) // top-right (was bottom-right)  
+        uvs.push(0.5, 1) // bottom-center (was top-center)
+        console.log('⚠️ Using default FLIPPED UV coordinates for face', faceIndex)
+      }
+    })
+    
+    // Set attributes
+    bufferGeometry.setAttribute('position', new THREE_BASE.Float32BufferAttribute(positions, 3))
+    bufferGeometry.setAttribute('uv', new THREE_BASE.Float32BufferAttribute(uvs, 2))
+    bufferGeometry.setIndex(indices)
+    
+    // Copy material groups if they exist
+    if (this.faces.length > 0) {
+      bufferGeometry.clearGroups()
+      this.faces.forEach((face, i) => {
+        bufferGeometry.addGroup(i * 3, 3, face.materialIndex || 0)
+      })
+    }
+    
+    bufferGeometry.computeVertexNormals()
+    console.log('✅ BufferGeometry conversion complete with', uvs.length/2, 'UV coordinates')
+    
+    return bufferGeometry
+  }
 }
 
 // Create a new object that extends THREE with compatibility constants

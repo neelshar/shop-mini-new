@@ -15,7 +15,7 @@ const lightMap = loader.load(lightMapPath);
 lightMap.wrapS = THREE.RepeatWrapping;
 lightMap.wrapT = THREE.RepeatWrapping;
 
-var computed_materials = {};
+var computed_materials = {}; // Cache cleared - will force bright green texture regeneration
 
 export const KEY_MATERIAL_STATES = {
   DEFAULT: 0,
@@ -45,23 +45,22 @@ const setMaterialIndexes = (mesh, side, top, isoent) => {
     if (index) {
       mesh.geometry.clearGroups();
       
-      // Group faces by material
+      // FORCE ALL FACES TO USE MATERIAL INDEX 0 (which has our green texture)
       const faceCount = index.count / 3;
       for (let i = 0; i < faceCount; i++) {
-        let isTop = i < threshold || i === 8;
-        let materialIndex = isTop ? top : side;
-        
-        // Add group for this face (3 vertices per face)
-        mesh.geometry.addGroup(i * 3, 3, materialIndex);
+        // ALWAYS use material index 0 (guaranteed to have our green texture)
+        mesh.geometry.addGroup(i * 3, 3, 0);
       }
+      console.log('🟢 FORCED', faceCount, 'faces to use top material for', mesh.name || 'unnamed key');
     }
   } 
   // Handle legacy Geometry
   else if (mesh.geometry.faces) {
+    // FORCE ALL FACES TO USE MATERIAL INDEX 0 (green texture) for legacy geometry too
     mesh.geometry.faces.forEach((f, i) => {
-      let isTop = i < threshold || i === 8;
-      f.materialIndex = isTop ? top : side;
+      f.materialIndex = 0; // ALWAYS use material index 0 (guaranteed to have our green texture)
     });
+    console.log('🟢 FORCED', mesh.geometry.faces.length, 'legacy faces to use top material for', mesh.name || 'unnamed key');
     mesh.geometry.groupsNeedUpdate = true;
   }
 };
@@ -73,16 +72,25 @@ const getMaterialSet = (opts, offset) => {
 
   // Check if we already have this texture to prevent recreation
   if (!computed_materials[textureKey]) {
-    console.log('🎨 Creating NEW texture for', opts.code);
+    console.log('🎨 FORCING TEXTURE APPLICATION for', opts.code);
     let legendTexture = keyTexture(opts);
-    let top = new THREE.MeshLambertMaterial({
+    
+    // Use MeshBasicMaterial for guaranteed visibility (no lighting dependencies)
+    let top = new THREE.MeshBasicMaterial({
       map: legendTexture,
-      lightMap: lightMap,
-      lightMapIntensity: 0,
+      transparent: false,
+      opacity: 1.0,
+      side: THREE.DoubleSide, // Render both sides
     });
+    
+    // Force texture properties for maximum visibility
     top.map.minFilter = THREE.LinearFilter;
+    top.map.magFilter = THREE.LinearFilter;
+    top.map.needsUpdate = true;
+    top.needsUpdate = true;
+    
     computed_materials[textureKey] = top;
-    console.log('✅ Cached new texture material for', opts.code);
+    console.log('✅ FORCED texture material created for', opts.code, 'texture size:', legendTexture.image?.width, 'x', legendTexture.image?.height);
   } else {
     console.log('♻️ Reusing existing texture for', opts.code);
   }
@@ -105,30 +113,37 @@ const getMaterialSet = (opts, offset) => {
 
 export const keyMaterials = (opts) => {
   let base = getMaterialSet(opts);
-  opts.color = initial_settings.keys.activeColor;
-  opts.background = initial_settings.keys.activeBackground;
-  let active = getMaterialSet(opts);
-  let materials = [...active, ...base];
+  console.log('🎨 keyMaterials - base materials created for', opts.code);
+  
+  // Create all 4 materials but use our green texture material for ALL slots
+  let materials = [base[1], base[1], base[1], base[1]]; // ALL use our green texture material
+  
+  console.log('🟢 FORCED all 4 material slots to use green texture material for', opts.code);
   return materials;
 };
 
 export const updateMaterials = (mesh, opts) => {
   console.log('🔧 updateMaterials called with opts:', opts);
   let base = getMaterialSet(opts);
-  mesh.material[2] = base[0];
-  mesh.material[3] = base[1];
+  
+  // FORCE ALL MATERIAL SLOTS TO USE OUR GREEN TEXTURE MATERIAL
+  mesh.material[0] = base[1]; // Green texture
+  mesh.material[1] = base[1]; // Green texture  
+  mesh.material[2] = base[1]; // Green texture
+  mesh.material[3] = base[1]; // Green texture
+  
   setKeyMaterialState(mesh, KEY_MATERIAL_STATES.DEFAULT, opts.isIsoEnt);
   
   // Force material updates
-  mesh.material[2].needsUpdate = true;
-  mesh.material[3].needsUpdate = true;
+  for (let i = 0; i < 4; i++) {
+    if (mesh.material[i]) {
+      mesh.material[i].needsUpdate = true;
+    }
+  }
   mesh.geometry.groupsNeedUpdate = true;
   
-  console.log('✅ updateMaterials completed, material[3] (top):', mesh.material[3]);
-  console.log('🎨 Top material has map:', mesh.material[3].map ? 'YES' : 'NO');
-  if (mesh.material[3].map) {
-    console.log('🖼️ Texture size:', mesh.material[3].map.image?.width, 'x', mesh.material[3].map.image?.height);
-  }
+  console.log('🟢 FORCED all material slots to use green texture for', opts.code);
+  console.log('🎨 Material[0] has map:', mesh.material[0].map ? 'YES' : 'NO');
 };
 
 export const updateActiveMaterials = (mesh, opts) => {

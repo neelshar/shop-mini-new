@@ -162,24 +162,38 @@ export const keyTexture = (opts) => {
     ent_off_y = 6;
   }
 
-  // SIMPLE TEXT DRAWING WITH PROPER ALIGNMENT  
+  // GUARANTEED VISIBLE APPROACH - MAKE EVERYTHING BRIGHT AND OBVIOUS
+  
+  // First, fill the ENTIRE canvas with bright color so we know texture is applied
+  ctx.fillStyle = '#00ff00'; // BRIGHT GREEN background for visibility
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Add bright border
+  ctx.strokeStyle = '#ff0000'; // RED border
+  ctx.lineWidth = 8;
+  ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+  
+  // Set up text properties
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ctx.font = 'bold 60px Arial'; // HUGE font
   
-  // Draw test dot for debugging
-  ctx.fillStyle = '#ff0000'; 
-  ctx.fillText('●', canvas.width / 2, canvas.height / 2 - 20);
-  
-  // Draw the actual character in white
-  ctx.fillStyle = '#ffffff';
+  // Draw text with high contrast
+  ctx.fillStyle = '#000000'; // BLACK text on green background for maximum contrast
   
   if (mainChar && mainChar.trim().length > 0) {
-    console.log('🔤 Drawing character:', mainChar, 'for key:', key, 'at center:', canvas.width / 2, canvas.height / 2);
-    ctx.fillText(mainChar, canvas.width / 2, canvas.height / 2 + 10);
+    console.log('🔤 Drawing GUARANTEED VISIBLE character:', mainChar, 'for key:', key);
+    ctx.fillText(mainChar, canvas.width / 2, canvas.height / 2);
   } else {
-    console.log('🔤 No character found for key:', key, 'drawing fallback');
-    ctx.fillText('?', canvas.width / 2, canvas.height / 2 + 10);
+    console.log('🔤 Drawing fallback "X" for key:', key);
+    ctx.fillText('X', canvas.width / 2, canvas.height / 2);
   }
+  
+  // Add a bright dot for extra visibility
+  ctx.fillStyle = '#ff00ff'; // MAGENTA dot
+  ctx.beginPath();
+  ctx.arc(canvas.width - 20, 20, 10, 0, 2 * Math.PI);
+  ctx.fill();
   
   console.log('✅ Text drawing completed for key:', key);
 
@@ -187,7 +201,7 @@ export const keyTexture = (opts) => {
 
   texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
-  texture.flipY = false; // Important for canvas textures
+  texture.flipY = true; // FLIP TEXTURE TO CORRECT ORIENTATION
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   

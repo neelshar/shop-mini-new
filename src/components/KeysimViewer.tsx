@@ -111,7 +111,7 @@ export function KeysimViewer({
               const canvas = keysimWrapper.querySelector('canvas') as HTMLCanvasElement
               if (canvas) {
                 const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
-                if (gl && !gl.isContextLost()) {
+                if (gl && !(gl as WebGLRenderingContext).isContextLost()) {
                   console.log('✅ WebGL context restored!')
                 } else {
                   console.log('⏳ Retrying KeySim initialization...')
@@ -375,7 +375,8 @@ export function KeysimViewer({
   // Use a callback ref to ensure DOM stability
   const setContainerRef = (node: HTMLDivElement | null) => {
     if (node && !containerRef.current) {
-      containerRef.current = node
+      // Use type assertion to bypass readonly restriction
+      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node
       // Initialize KeySim once the DOM is ready
       setTimeout(() => {
         const initKeysim = async () => {
