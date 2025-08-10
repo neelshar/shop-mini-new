@@ -112,55 +112,211 @@ export function App() {
     return total > 0 ? total : 399
   }
 
-  // Welcome Page - Black Background with Floating Rings and 3D Carousel
+  // Welcome Page - Clean Layout
   if (currentPage === 'welcome') {
     return (
       <div className="min-h-screen relative overflow-hidden">
         {/* Animated Background with floating rings */}
         <AnimatedBackground />
         
-        {/* Main Content */}
-        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-8">
-          {/* 3D Keyboard Carousel - Smaller and more prominent */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="mb-8 max-w-4xl w-full"
+        {/* Main Content - Clean Layout */}
+        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
+          {/* INSANELY SLEEK Header Text */}
+          <motion.div 
+            className="text-center mb-8 max-w-4xl mx-auto"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+          >
+            {/* DESIGN with perfect typography */}
+            <motion.h1 
+              className="text-5xl sm:text-6xl lg:text-7xl font-black text-white mb-3 leading-none tracking-tight"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+              style={{
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontWeight: 900,
+                letterSpacing: '-0.02em'
+              }}
+            >
+              DESIGN
+            </motion.h1>
+            
+            {/* PERFECT divider line exactly like reference */}
+            <motion.div 
+              className="relative mx-auto mb-3 flex items-center justify-center"
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
+            >
+              {/* Left line */}
+              <div className="w-16 h-px bg-gradient-to-r from-transparent to-purple-500"></div>
+              
+              {/* Center dot with glow */}
+              <motion.div 
+                className="relative mx-4"
+                animate={{
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <div className="w-2 h-2 bg-purple-500 rounded-full relative z-10"></div>
+                <motion.div 
+                  className="absolute inset-0 w-2 h-2 bg-purple-400 rounded-full blur-sm"
+                  animate={{
+                    opacity: [0.6, 1, 0.6],
+                    scale: [1, 1.3, 1]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                ></motion.div>
+              </motion.div>
+              
+              {/* Right line */}
+              <div className="w-16 h-px bg-gradient-to-l from-transparent to-purple-500"></div>
+            </motion.div>
+            
+            {/* YOUR CLICKS with perfect typography */}
+            <motion.h1 
+              className="text-5xl sm:text-6xl lg:text-7xl font-black text-white mb-8 leading-none tracking-tight"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+              style={{
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontWeight: 900,
+                letterSpacing: '-0.02em'
+              }}
+            >
+              YOUR CLICKS
+            </motion.h1>
+            
+            {/* Elegant subtitle */}
+            <motion.p 
+              className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed font-light"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
+              style={{
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                letterSpacing: '0.01em'
+              }}
+            >
+              Streamline your custom keyboard<br />building experience
+            </motion.p>
+          </motion.div>
+
+          {/* Gallery with smooth entrance */}
+          <motion.div 
+            className="mb-12 w-full px-2"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 1.2, ease: "easeOut" }}
           >
             <KeyboardCarousel />
           </motion.div>
 
-          {/* Main Content */}
-          <motion.div
+          {/* ABSOLUTELY INSANE Premium Button */}
+          <motion.div 
+            className="relative"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-center mb-8 max-w-4xl"
+            transition={{ duration: 1, delay: 1.6, ease: "easeOut" }}
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
-              Design Your Custom Clicks
-            </h1>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
-              Perfect your mechanical keyboard experience with our premium components and professional customization
-            </p>
-          </motion.div>
-
-          {/* Start Building Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="text-center"
-          >
-            <HolographicButton
-              onClick={() => setCurrentPage('builder')}
-              variant="primary"
-              size="lg"
-              className="px-16 py-5 text-lg font-semibold"
+            {/* Ultra-thin premium border */}
+            <motion.div 
+              className="relative p-px rounded-2xl bg-gradient-to-r from-slate-600/50 via-purple-500/80 to-slate-600/50"
+              animate={{
+                background: [
+                  "linear-gradient(90deg, rgba(100,116,139,0.5), rgba(147,51,234,0.9), rgba(100,116,139,0.5))",
+                  "linear-gradient(180deg, rgba(147,51,234,0.9), rgba(59,130,246,0.8), rgba(147,51,234,0.9))",
+                  "linear-gradient(270deg, rgba(59,130,246,0.8), rgba(100,116,139,0.5), rgba(59,130,246,0.8))",
+                  "linear-gradient(360deg, rgba(100,116,139,0.5), rgba(147,51,234,0.9), rgba(100,116,139,0.5))"
+                ]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
             >
-              Start Building
-            </HolographicButton>
+              {/* Subtle outer glow */}
+              <motion.div
+                className="absolute -inset-px rounded-2xl opacity-40 blur-sm"
+                animate={{
+                  background: [
+                    "linear-gradient(90deg, rgba(100,116,139,0.3), rgba(147,51,234,0.6), rgba(100,116,139,0.3))",
+                    "linear-gradient(180deg, rgba(147,51,234,0.6), rgba(59,130,246,0.5), rgba(147,51,234,0.6))",
+                    "linear-gradient(270deg, rgba(59,130,246,0.5), rgba(100,116,139,0.3), rgba(59,130,246,0.5))",
+                    "linear-gradient(360deg, rgba(100,116,139,0.3), rgba(147,51,234,0.6), rgba(100,116,139,0.3))"
+                  ]
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              
+              {/* Premium Button */}
+              <motion.button
+                onClick={() => setCurrentPage('builder')}
+                className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white font-bold px-16 py-5 text-lg rounded-2xl overflow-hidden w-full backdrop-blur-sm"
+                whileHover={{ 
+                  scale: 1.01,
+                  boxShadow: "0 20px 40px rgba(147, 51, 234, 0.3)"
+                }}
+                whileTap={{ scale: 0.99 }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 400, 
+                  damping: 25,
+                  boxShadow: { duration: 0.2 }
+                }}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontWeight: 700,
+                  letterSpacing: '0.02em'
+                }}
+              >
+                {/* Subtle inner shimmer */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                  animate={{
+                    x: [-300, 300]
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    repeatDelay: 2
+                  }}
+                />
+                
+                {/* Inner gradient highlight */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent rounded-2xl"
+                  animate={{
+                    opacity: [0.3, 0.6, 0.3]
+                  }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+                
+                <span className="relative z-10 drop-shadow-lg">Start Building</span>
+              </motion.button>
+            </motion.div>
           </motion.div>
         </div>
       </div>

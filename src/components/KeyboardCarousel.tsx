@@ -1,43 +1,50 @@
 import { motion } from 'framer-motion';
 
-// Import images as ES modules - this is the correct way in Vite/React
-import img1 from '/keyboard_images/GOyCynoakAAWOsP.jpg';
-import img2 from '/keyboard_images/feature-coolest-mechanical-keyboards.png';  
-import img3 from '/keyboard_images/rsz_holynickepic.jpg';
-
 export const KeyboardCarousel = () => {
+  // DARK CUSTOM MECHANICAL KEYBOARDS - Real custom builds
   const keyboardImages = [
     {
-      src: img1,
-      title: 'Gaming Pro',
-      subtitle: 'High Performance'
+      src: 'https://images.unsplash.com/photo-1595044426077-d36d9236d54a?w=600&h=400&fit=crop&auto=format&q=90',
+      title: 'Custom 65%',
+      subtitle: 'Artisan Build'
     },
     {
-      src: img2,
-      title: 'Aesthetic Build', 
-      subtitle: 'Premium Design'
+      src: 'https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=600&h=400&fit=crop&auto=format&q=90',
+      title: 'Keycap Legend', 
+      subtitle: 'Premium Switches'
     },
     {
-      src: img3,
-      title: 'Custom Artisan',
-      subtitle: 'Handcrafted'
+      src: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&h=400&fit=crop&auto=format&q=90',
+      title: 'Enthusiast TKL',
+      subtitle: 'Hand Crafted'
     },
   ];
 
-  console.log('🖼️ Imported images:', { img1, img2, img3 });
+  console.log('🖤 DARK AESTHETIC KEYBOARDS:', keyboardImages.map(img => img.src));
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-2">
-      {/* Always horizontal - force 3 columns */}
-      <div className="flex gap-3 overflow-x-auto">
-        {keyboardImages.map((keyboard, index) => (
+    <div className="w-full max-w-6xl mx-auto px-2 overflow-hidden">
+      {/* Continuously moving horizontal gallery */}
+      <motion.div 
+        className="flex gap-6"
+        animate={{
+          x: [0, -100, -200, -300, 0], // Move through all images and back
+        }}
+        transition={{
+          duration: 12, // 12 seconds for full cycle
+          repeat: Infinity,
+          ease: "linear", // Smooth constant movement
+        }}
+      >
+        {/* Duplicate images for seamless loop */}
+        {[...keyboardImages, ...keyboardImages].map((keyboard, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ 
               duration: 0.6, 
-              delay: index * 0.2,
+              delay: (index % keyboardImages.length) * 0.2,
               ease: [0.25, 0.1, 0.25, 1]
             }}
             className="relative group flex-shrink-0 w-72"
@@ -47,8 +54,8 @@ export const KeyboardCarousel = () => {
                 src={keyboard.src}
                 alt={keyboard.title}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                onLoad={() => console.log(`✅ Successfully loaded image ${index + 1}`)}
-                onError={() => console.error(`❌ Failed to load image ${index + 1}`)}
+                onLoad={() => console.log(`✅ LOADED: ${keyboard.title}`)}
+                onError={() => console.error(`❌ FAILED: ${keyboard.title} - ${keyboard.src}`)}
               />
               
               {/* Gradient overlay */}
@@ -102,7 +109,7 @@ export const KeyboardCarousel = () => {
             </div>
           </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };

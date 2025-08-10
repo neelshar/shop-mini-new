@@ -18,9 +18,14 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.6",
+    "@fontsource/orbitron": "^5.2.6",
+    "@fontsource/space-grotesk": "^5.2.8",
+    "@react-spring/web": "^10.0.1",
     "@shopify/shop-minis-react": "0.0.30",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-intersection-observer": "^9.16.0",
     "three": "0.178.0"
   }
 }
