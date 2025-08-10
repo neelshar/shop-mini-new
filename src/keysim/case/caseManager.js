@@ -222,6 +222,25 @@ export default class CaseManager {
     subscribe("colorways.active", () => {
       this.updateLightMap();
     });
+
+    // Listen for dynamic case color updates from the UI
+    document.addEventListener("force_case_color_update", (event) => {
+      console.log('🎨 Received case color update event:', event.detail);
+      if (event.detail && event.detail.color) {
+        this.color = event.detail.color;
+        this.updateCaseMaterial(event.detail.color);
+        console.log('✅ Case color updated dynamically to:', event.detail.color);
+      }
+    });
+
+    // Also expose this instance globally for debugging
+    window.caseManager = this;
+    
+    // Expose scene and renderer for instant color updates
+    if (this.scene) window.scene = this.scene;
+    if (this.renderer) window.renderer = this.renderer;
+    
+    console.log('✅ Globals exposed: caseManager, scene, renderer');
   }
 
   position() {
@@ -359,13 +378,6 @@ export default class CaseManager {
         console.log('✅ Case added to group! Case mesh:', this.case.name, 'Position:', this.case.position);
         console.log('✅ Group children count after adding case:', this.group.children.length);
         
-        // Set proper case color (gray)
-        this.case.material = new THREE.MeshBasicMaterial({ 
-          color: '#eeeeee', // Nice gray color like the real KeySim
-          wireframe: false,
-          transparent: false
-        });
-        
       } else {
         console.error('❌ Failed to create case mesh!');
       }
@@ -388,36 +400,48 @@ export default class CaseManager {
   }
 
   updateCaseMaterial(color = this.color, finish = this.finish) {
-    let materials = [];
-    let options = MATERIAL_OPTIONS[finish];
-    options.lightMap = this.ao;
-    if (finish !== "matte") {
-      options.envMap = this.cubemap;
-      options.roughnessMap = this.roughnessMap;
-      options.map = this.albedoMap;
+    console.log('🔧 updateCaseMaterial called with color:', color, 'finish:', finish);
+    
+    // Update the instance color
+    this.color = color;
+    
+    if (!this.case) {
+      console.log('⚠️ No case mesh found to update');
+      return;
     }
-    //create materials
-    let materialPrimary = new THREE.MeshPhysicalMaterial(
-      Object.assign(
-        {
-          color: color,
-        },
-        options
-      )
-    );
-    //side material
-    options.lightMap = this.lightTexture;
-    let materialSecondary = new THREE.MeshPhysicalMaterial(
-      Object.assign(
-        {
-          color: color,
-          aoMap: this.aoShadowTexture,
-          aoMapIntensity: 0.6,
-        },
-        options
-      )
-    );
-    materials.push(materialPrimary, materialSecondary);
-    this.case.material = materials;
+    
+    // Create a simple, reliable material that won't become transparent
+    let material = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: false,
+      opacity: 1.0
+    });
+    
+    // Set the material (works for both single material and material array setups)
+    this.case.material = material;
+    
+    console.log('✅ Case material updated successfully with color:', color);
+    
+    // Force a render update
+    if (material.needsUpdate !== undefined) {
+      material.needsUpdate = true;
+    }
+    
+    // Force scene re-render by marking everything as needing update
+    if (this.scene) {
+      this.scene.traverse((child) => {
+        if (child.material) {
+          child.material.needsUpdate = true;
+        }
+      });
+      
+      // Trigger a manual render if possible
+      if (window.threeRenderer) {
+        window.threeRenderer.render(this.scene, window.threeCamera);
+      }
+    }
+    
+    // Also dispatch a render event
+    document.dispatchEvent(new CustomEvent('force_three_render'));
   }
 }

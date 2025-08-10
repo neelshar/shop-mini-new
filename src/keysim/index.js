@@ -1,6 +1,10 @@
 import SceneManager from "./sceneManager";
 import CaseManager from "./case/caseManager";
 import KeyManager from "./key/keyManager";
+import * as THREE from "./three-compat";
+
+// Make Three.js globally available for color updates
+window.THREE = THREE;
 
 const SCREEN_SCALE = 50;
 

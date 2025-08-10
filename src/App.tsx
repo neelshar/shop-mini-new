@@ -467,7 +467,7 @@ export function App() {
           
           <button className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-900/80 transition-all duration-200">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13h10m-5 5a1 1 0 100 2 1 1 0 000-2zm5 0a1 1 0 100 2 1 1 0 000-2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H17M9 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM20 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
             </svg>
           </button>
         </div>
@@ -779,20 +779,192 @@ export function App() {
     )
   }
 
-  // Color Customizer Page
+  // Simple Case Color Customizer Page
   if (currentPage === 'customizer') {
-    const colorOptions = [
-      { name: 'Grey', value: '#6b7280' },
-      { name: 'Black', value: '#1f2937' },
-      { name: 'White', value: '#f3f4f6' },
-      { name: 'Blue', value: '#3b82f6' },
-      { name: 'Red', value: '#ef4444' },
-      { name: 'Green', value: '#10b981' },
-      { name: 'Purple', value: '#8b5cf6' },
-      { name: 'Orange', value: '#f97316' },
-      { name: 'Pink', value: '#ec4899' },
-      { name: 'Cyan', value: '#06b6d4' },
+    const caseColorOptions = [
+      { name: 'White', value: '#ffffff' },
+      { name: 'Black', value: '#000000' },
+      { name: 'Red', value: '#ff0000' },
+      { name: 'Blue', value: '#0066ff' },
+      { name: 'Green', value: '#00ff00' },
+      { name: 'Purple', value: '#8b00ff' },
+      { name: 'Orange', value: '#ff6600' },
+      { name: 'Pink', value: '#ff69b4' },
+      { name: 'Cyan', value: '#00ffff' },
+      { name: 'Gold', value: '#ffd700' },
     ]
+
+    // DEBUG FUNCTION - Find all objects in the scene
+    const debugScene = () => {
+      console.log('🔍 === SCENE DEBUG START ===')
+      
+      // Check what's available globally
+      console.log('Available globals:', {
+        THREE: !!(window as any).THREE,
+        caseManager: !!(window as any).caseManager,
+        scene: !!(window as any).scene,
+        renderer: !!(window as any).renderer,
+        store: !!(window as any).store
+      })
+      
+      // Debug caseManager
+      if ((window as any).caseManager) {
+        const caseManager = (window as any).caseManager
+        console.log('🏠 CaseManager:', {
+          color: caseManager.color,
+          case: caseManager.case,
+          group: caseManager.group,
+          scene: caseManager.scene,
+          groupChildren: caseManager.group?.children?.length || 0
+        })
+        
+        if (caseManager.group && caseManager.group.children) {
+          console.log('📦 Group children:')
+          caseManager.group.children.forEach((child: any, i: number) => {
+            console.log(`  [${i}] ${child.name || child.type}:`, {
+              type: child.type,
+              material: child.material,
+              materialColor: child.material?.color?.getHex?.() || 'no color',
+              visible: child.visible
+            })
+          })
+        }
+      }
+      
+      // Debug scene
+      if ((window as any).scene) {
+        const scene = (window as any).scene
+        console.log('🎬 Scene children:', scene.children.length)
+        scene.traverse((object: any) => {
+          if (object.name === 'CASE' || (object.material && object.type === 'Mesh')) {
+            console.log('🎯 Found mesh object:', {
+              name: object.name,
+              type: object.type,
+              material: object.material,
+              materialType: object.material?.constructor?.name,
+              color: object.material?.color?.getHex?.(),
+              visible: object.visible,
+              parent: object.parent?.name
+            })
+          }
+        })
+      }
+      
+      console.log('🔍 === SCENE DEBUG END ===')
+    }
+
+    // COMPLETELY REVAMPED COLOR CHANGER
+    const updateCaseColor = (newColor: string) => {
+      console.log('🎨 === COLOR CHANGE START ===', newColor)
+      
+      // First, debug what we have
+      debugScene()
+      
+      // Update React state
+      setKeyboardConfig(prev => ({ ...prev, case_color: newColor }))
+      
+      let colorChanged = false
+      const THREE = (window as any).THREE
+      
+      if (!THREE) {
+        console.error('❌ THREE.js not available!')
+        return
+      }
+      
+      // Method 1: Update via caseManager
+      if ((window as any).caseManager) {
+        const caseManager = (window as any).caseManager
+        console.log('🔧 Updating via caseManager...')
+        
+        // Update the manager's color
+        caseManager.color = newColor
+        
+        // Update direct case object
+        if (caseManager.case && caseManager.case.material) {
+          console.log('🎯 Found caseManager.case, updating material...')
+          
+          // Handle both single material and material array
+          if (Array.isArray(caseManager.case.material)) {
+            caseManager.case.material.forEach((mat: any, i: number) => {
+              console.log(`  Updating material [${i}]:`, mat.constructor.name)
+              mat.color.setHex(parseInt(newColor.replace('#', '0x')))
+              mat.needsUpdate = true
+            })
+          } else {
+            console.log('  Updating single material:', caseManager.case.material.constructor.name)
+            caseManager.case.material.color.setHex(parseInt(newColor.replace('#', '0x')))
+            caseManager.case.material.needsUpdate = true
+          }
+          colorChanged = true
+        }
+        
+        // Update all children in the group
+        if (caseManager.group && caseManager.group.children) {
+          console.log('🔧 Updating group children...')
+          caseManager.group.children.forEach((child: any, i: number) => {
+            if (child.material) {
+              console.log(`  Updating child [${i}] ${child.name}:`, child.material.constructor.name)
+              
+              if (Array.isArray(child.material)) {
+                child.material.forEach((mat: any) => {
+                  mat.color.setHex(parseInt(newColor.replace('#', '0x')))
+                  mat.needsUpdate = true
+                })
+              } else {
+                child.material.color.setHex(parseInt(newColor.replace('#', '0x')))
+                child.material.needsUpdate = true
+              }
+              colorChanged = true
+            }
+          })
+        }
+      }
+      
+      // Method 2: Update via scene traversal
+      if ((window as any).scene) {
+        const scene = (window as any).scene
+        console.log('🔧 Updating via scene traversal...')
+        
+        scene.traverse((object: any) => {
+          if (object.material && object.type === 'Mesh') {
+            // Check if this looks like a case object
+            const isCase = object.name === 'CASE' || 
+                          object.parent?.name === 'CASE' ||
+                          (object.geometry && object.material)
+            
+            if (isCase) {
+              console.log('🎯 Updating scene object:', object.name || 'unnamed', object.material.constructor.name)
+              
+              if (Array.isArray(object.material)) {
+                object.material.forEach((mat: any) => {
+                  mat.color.setHex(parseInt(newColor.replace('#', '0x')))
+                  mat.needsUpdate = true
+                })
+              } else {
+                object.material.color.setHex(parseInt(newColor.replace('#', '0x')))
+                object.material.needsUpdate = true
+              }
+              colorChanged = true
+            }
+          }
+        })
+      }
+      
+      // Method 3: Force re-render
+      if ((window as any).renderer && (window as any).scene && (window as any).camera) {
+        console.log('🔧 Forcing render...')
+        const renderer = (window as any).renderer
+        const scene = (window as any).scene
+        const camera = (window as any).camera
+        renderer.render(scene, camera)
+      }
+      
+      console.log('🎨 === COLOR CHANGE END ===', colorChanged ? '✅ SUCCESS' : '❌ FAILED')
+      
+      if (!colorChanged) {
+        console.error('❌ NO MATERIALS WERE UPDATED! Check the debug output above.')
+      }
+    }
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
@@ -809,84 +981,85 @@ export function App() {
                 </svg>
               </button>
               <div>
-                <h1 className="text-xl font-semibold text-white">Customize Colors</h1>
-                <p className="text-slate-400 text-sm">Make it uniquely yours</p>
+                <h1 className="text-xl font-semibold text-white">Customize Case Color</h1>
+                <p className="text-slate-400 text-sm">Choose your keyboard case color</p>
               </div>
             </div>
           </div>
 
-          {/* 3D KeySim Preview */}
-          <div className="mb-6 h-64 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-800/60 border border-slate-700/50 backdrop-blur-sm relative overflow-hidden">
-            <KeysimViewer
-              layout="80"
-              caseColor={keyboardConfig.case_color}
-              keycapColor={keyboardConfig.keycap_color}
-              switchColor={keyboardConfig.switch_color}
-            />
-            </div>
-            
-          {/* Color Customization */}
-          <div className="space-y-6">
-            {/* Case Color */}
-            <div>
-              <h3 className="text-white font-medium mb-3">Case Color</h3>
-              <div className="grid grid-cols-5 gap-3">
-                {colorOptions.map((color) => (
-                  <button
-                    key={`case-${color.value}`}
-                    onClick={() => setKeyboardConfig(prev => ({ ...prev, case_color: color.value }))}
-                    className={`aspect-square rounded-xl border-2 transition-all duration-200 ${
-                      keyboardConfig.case_color === color.value
-                        ? 'border-white scale-110'
-                        : 'border-slate-600 hover:border-slate-400 hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                  >
-                    <span className="sr-only">{color.name}</span>
-                  </button>
-                ))}
+          {/* Current Color Display */}
+          <div className="mb-6">
+            <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
+              <div className="flex items-center space-x-4">
+                <div 
+                  className="w-12 h-12 rounded-xl border-2 border-slate-600"
+                  style={{ backgroundColor: keyboardConfig.case_color }}
+                ></div>
+                <div>
+                  <h3 className="text-white font-medium">Current Case Color</h3>
+                  <p className="text-slate-400 text-sm">{keyboardConfig.case_color}</p>
+                </div>
               </div>
             </div>
+          </div>
             
-            {/* Keycap Color */}
-            <div>
-              <h3 className="text-white font-medium mb-3">Keycap Color</h3>
-              <div className="grid grid-cols-5 gap-3">
-                {colorOptions.map((color) => (
-                  <button
-                    key={`keycap-${color.value}`}
-                    onClick={() => setKeyboardConfig(prev => ({ ...prev, keycap_color: color.value }))}
-                    className={`aspect-square rounded-xl border-2 transition-all duration-200 ${
-                      keyboardConfig.keycap_color === color.value
-                        ? 'border-white scale-110'
-                        : 'border-slate-600 hover:border-slate-400 hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                  >
-                    <span className="sr-only">{color.name}</span>
-                  </button>
-                ))}
-              </div>
+          {/* Debug Button */}
+          <div className="mb-6">
+            <button
+              onClick={debugScene}
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium"
+            >
+              🔍 Debug Scene (Check Console)
+            </button>
+          </div>
+
+          {/* Case Color Options */}
+          <div className="mb-8">
+            <h3 className="text-white font-medium mb-4">Select New Case Color</h3>
+            <div className="grid grid-cols-5 gap-4">
+              {caseColorOptions.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => updateCaseColor(color.value)}
+                  className={`aspect-square rounded-xl border-2 transition-all duration-200 relative ${
+                    keyboardConfig.case_color === color.value
+                      ? 'border-white scale-110 shadow-lg'
+                      : 'border-slate-600 hover:border-slate-400 hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                >
+                  {keyboardConfig.case_color === color.value && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                  <span className="sr-only">{color.name}</span>
+                </button>
+              ))}
             </div>
-            
-            {/* Switch Color */}
-            <div>
-              <h3 className="text-white font-medium mb-3">Switch Color</h3>
-              <div className="grid grid-cols-5 gap-3">
-                {colorOptions.map((color) => (
-                  <button
-                    key={`switch-${color.value}`}
-                    onClick={() => setKeyboardConfig(prev => ({ ...prev, switch_color: color.value }))}
-                    className={`aspect-square rounded-xl border-2 transition-all duration-200 ${
-                      keyboardConfig.switch_color === color.value
-                        ? 'border-white scale-110'
-                        : 'border-slate-600 hover:border-slate-400 hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                  >
-                    <span className="sr-only">{color.name}</span>
-                  </button>
-                ))}
+            <div className="grid grid-cols-5 gap-4 mt-2">
+              {caseColorOptions.map((color) => (
+                <p key={`label-${color.value}`} className="text-xs text-slate-400 text-center">
+                  {color.name}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-start space-x-3">
+              <svg className="w-5 h-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h4 className="text-blue-300 font-medium text-sm">Dynamic Updates</h4>
+                <p className="text-blue-200/80 text-sm">
+                  Case colors now update instantly! Click any color above to see the change applied immediately to the 3D keyboard.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -894,21 +1067,23 @@ export function App() {
         {/* Fixed Bottom Actions */}
         <div className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50 p-4">
           <div className="flex space-x-3">
-              <button 
-                onClick={() => setCurrentPage('builder')}
-                className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200"
-              >
-                Back
+            <button 
+              onClick={() => setCurrentPage('builder')}
+              className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-900/80 transition-all duration-200"
+            >
+              Back to Builder
             </button>
-            <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200">
-              Add to Cart - $399
+            <button 
+              onClick={() => setCurrentPage('builder')}
+              className="flex-1 bg-green-600 text-white font-medium py-3 px-4 rounded-xl hover:bg-green-700 transition-all duration-200"
+            >
+              View in 3D
             </button>
           </div>
         </div>
       </div>
-    </div>
-  )
-  }
+    )
+}
 
   // This should never be reached, but just in case
   return null

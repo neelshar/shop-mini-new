@@ -3,7 +3,7 @@ import { store } from "../store";
 import holes from "./holes";
 
 export default (layout, color) => {
-  console.log('🔧 case_1.js called with layout:', layout, 'color:', color);
+  console.log('🏗️ case_1.js called with layout:', layout?.width + 'x' + layout?.height, 'color:', color);
   
   if (!layout) {
     console.error('❌ CRITICAL: No layout provided to case_1.js!');
@@ -15,7 +15,12 @@ export default (layout, color) => {
     return null;
   }
   
-  color = color || "#cccccc";
+  // Check for saved color in localStorage first, then use provided color, then fallback
+  const savedColor = typeof window !== 'undefined' ? localStorage.getItem('keyboardCaseColor') : null
+  color = savedColor || color || "#0066ff";
+  
+  console.log('🎨 case_1.js using color:', color, savedColor ? '(from localStorage)' : '(provided/default)')
+  
   let cornerRadius = 0.5;
   let bevel = 0.05;
   let bezel = 0.5;

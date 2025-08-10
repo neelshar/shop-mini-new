@@ -47,6 +47,12 @@ export default class SceneManager extends Collection {
     window.addEventListener("resize", (e) => this.resize(e), false);
     this.el.addEventListener("mousemove", (e) => this.move(e), false);
     this.el.addEventListener("click", (e) => this.mouseClick(e), false);
+
+    // Expose scene and renderer globally for dynamic color updates
+    window.scene = this.scene;
+    window.renderer = this.renderer;
+    window.camera = this.camera;
+    console.log('✅ SceneManager: Exposed scene, renderer, camera globally');
     this.el.addEventListener(
       "touchstart",
       (e) => {

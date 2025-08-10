@@ -27,7 +27,7 @@ export function ComponentSearchModal({
     const baseQueries = {
       keycaps: 'keycaps',
       switches: 'switches', 
-      case: 'case'
+      case: 'mechanical keyboard 75% case'
     }
     
     return searchQuery || baseQueries[componentType]
