@@ -33,6 +33,8 @@ export function App() {
     switch_color: '#2a2a2a' // Dark grey switches
   })
   const [isLoaded, setIsLoaded] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [nextPage, setNextPage] = useState<AppPage | null>(null)
   
   // Product search/select states
   const [selectedComponent, setSelectedComponent] = useState<'keycaps' | 'switches' | 'case' | null>(null)
@@ -54,6 +56,21 @@ export function App() {
     const timer = setTimeout(() => setIsLoaded(true), 100)
     return () => clearTimeout(timer)
   }, [])
+
+  // Smooth page transition function
+  const navigateToPage = (page: AppPage) => {
+    if (page === currentPage || isTransitioning) return
+    
+    setIsTransitioning(true)
+    setNextPage(page)
+    
+    // Delay to show exit animation, then change page
+    setTimeout(() => {
+      setCurrentPage(page)
+      setIsTransitioning(false)
+      setNextPage(null)
+    }, 300)
+  }
 
   // Handle product selection
   const handleProductSelect = (product: any, componentType: 'keycaps' | 'switches' | 'case') => {
@@ -94,7 +111,7 @@ export function App() {
   // Welcome Page - Clean Minimalistic Design with Blue Accents
   if (currentPage === 'welcome') {
     return (
-      <div className="min-h-screen bg-gradient-subtle-blue">
+      <div className={`min-h-screen bg-gradient-subtle-blue ${isTransitioning ? 'page-exit' : 'page-enter-zoom'}`}>
         <div className="section-padding max-w-4xl mx-auto">
           {/* Hero Section */}
             <div className="text-center mb-16">
@@ -126,8 +143,8 @@ export function App() {
                 isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}>
               <button
-                onClick={() => setCurrentPage('preferences')}
-                className="bg-gradient-deep-blue text-white font-medium text-lg px-8 py-4 rounded-xl hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 relative overflow-hidden"
+                onClick={() => navigateToPage('preferences')}
+                className="bg-gradient-deep-blue text-white font-medium text-lg px-8 py-4 rounded-xl hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 relative overflow-hidden hover:scale-105 active:scale-95"
               >
                 <span className="relative z-10">Start Building</span>
                 <div className="absolute inset-0 bg-gradient-ocean-blue opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
@@ -208,14 +225,14 @@ export function App() {
   // Preferences Page - Clean Minimalistic Design
   if (currentPage === 'preferences') {
     return (
-      <div className="min-h-screen bg-secondary">
+      <div className={`min-h-screen bg-secondary ${isTransitioning ? 'page-exit' : 'page-enter'}`}>
         <div className="section-padding max-w-3xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setCurrentPage('welcome')}
-                className="minimal-button p-3"
+                onClick={() => navigateToPage('welcome')}
+                className="minimal-button p-3 hover:scale-110 active:scale-95 transition-transform duration-200"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
@@ -337,14 +354,14 @@ export function App() {
           <div className="fixed bottom-0 left-0 right-0 bg-primary border-t border-light p-4">
             <div className="flex space-x-3 max-w-3xl mx-auto">
               <button 
-                onClick={() => setCurrentPage('welcome')}
-                className="minimal-button flex-1 py-3 px-4"
+                onClick={() => navigateToPage('welcome')}
+                className="minimal-button flex-1 py-3 px-4 hover:scale-105 active:scale-95 transition-transform duration-200"
               >
                 Back
               </button>
               <button 
-                onClick={() => setCurrentPage('builder')}
-                className="bg-gradient-sky-blue text-white font-medium flex-1 py-3 px-4 rounded-xl hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 relative overflow-hidden"
+                onClick={() => navigateToPage('builder')}
+                className="bg-gradient-sky-blue text-white font-medium flex-1 py-3 px-4 rounded-xl hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 relative overflow-hidden hover:scale-105 active:scale-95"
               >
                 <span className="relative z-10">See Recommendations</span>
                 <div className="absolute inset-0 bg-gradient-ocean-blue opacity-0 hover:opacity-100 transition-opacity duration-200"></div>
@@ -359,14 +376,14 @@ export function App() {
   // Builder Page - Clean Minimalistic Design
   if (currentPage === 'builder') {
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className={`min-h-screen bg-secondary ${isTransitioning ? 'page-exit' : 'page-enter'}`}>
       <div className="section-padding max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => setCurrentPage('preferences')}
-              className="minimal-button p-3"
+              onClick={() => navigateToPage('preferences')}
+              className="minimal-button p-3 hover:scale-110 active:scale-95 transition-transform duration-200"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
@@ -548,8 +565,8 @@ export function App() {
           <div className="fixed bottom-0 left-0 right-0 bg-primary border-t border-light p-4">
             <div className="flex space-x-3 max-w-4xl mx-auto">
               <button 
-                onClick={() => setCurrentPage('customizer')}
-                className="minimal-button py-3 px-6"
+                onClick={() => navigateToPage('customizer')}
+                className="minimal-button py-3 px-6 hover:scale-105 active:scale-95 transition-transform duration-200"
               >
                 Customize Colors
               </button>

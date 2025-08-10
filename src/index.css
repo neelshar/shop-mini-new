@@ -1,4 +1,5 @@
 @import "@shopify/shop-minis-react/styles";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -50,6 +51,32 @@
 
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* PAGE TRANSITION ANIMATIONS */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-100%); }
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.8); }
   to { opacity: 1; transform: scale(1); }
 }
 
@@ -173,28 +200,52 @@
   animation: float 3s ease-in-out infinite;
 }
 
+/* PAGE TRANSITION CLASSES */
+.page-enter {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.page-enter-back {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+.page-enter-zoom {
+  animation: zoomIn 0.4s ease-out;
+}
+
+.page-exit {
+  animation: slideOutLeft 0.3s ease-in;
+}
+
+.page-exit-back {
+  animation: slideOutRight 0.3s ease-in;
+}
+
 .animate-shimmer {
   animation: shimmer 2s ease-in-out infinite;
 }
 
 /* CLEAN TYPOGRAPHY */
 .text-display {
+  font-family: 'Playfair Display', serif;
   font-size: 3rem;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
 .text-heading {
+  font-family: 'Playfair Display', serif;
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
 .text-subheading {
+  font-family: 'Playfair Display', serif;
   font-size: 1.25rem;
   font-weight: 500;
   line-height: 1.3;
