@@ -128,67 +128,15 @@ export function App() {
     console.log('🔍 === SCENE DEBUG END ===')
   }
 
-  // INVESTIGATION METHOD: Delayed Updates + Timing Analysis
+  // Update case color (simplified to use reusable function)
   const updateCaseColor = (newColor: string) => {
-    console.log('🔍 INVESTIGATING TIMING ISSUE - Default changed to green but button doesn\'t work')
-    console.log('Target color:', newColor)
+    console.log('🏠 Updating case color to:', newColor)
     
     // Update React state
     setKeyboardConfig(prev => ({ ...prev, case_color: newColor }))
     
-    // Save to localStorage immediately 
-    localStorage.setItem('keyboardCaseColor', newColor)
-    console.log('💾 Saved to localStorage immediately')
-    
-    // Try immediate update
-    console.log('⚡ ATTEMPT 1: Immediate update...')
-    tryUpdateCase(newColor, 'immediate')
-    
-    // Try after 500ms delay
-    setTimeout(() => {
-      console.log('⏱️ ATTEMPT 2: After 500ms delay...')
-      tryUpdateCase(newColor, '500ms delay')
-    }, 500)
-    
-    // Try after 1 second delay
-    setTimeout(() => {
-      console.log('⏳ ATTEMPT 3: After 1 second delay...')
-      tryUpdateCase(newColor, '1s delay')
-    }, 1000)
-    
-    // Try after 2 second delay 
-    setTimeout(() => {
-      console.log('🕐 ATTEMPT 4: After 2 second delay...')
-      tryUpdateCase(newColor, '2s delay')
-    }, 2000)
-    
-    // Check what's available at different times
-    console.log('📊 TIMING ANALYSIS:')
-    console.log('Time 0ms - Available objects:', {
-      scene: !!(window as any).scene,
-      caseManager: !!(window as any).caseManager,
-      renderer: !!(window as any).renderer
-    })
-    
-    setTimeout(() => {
-      console.log('Time 500ms - Available objects:', {
-        scene: !!(window as any).scene,
-        caseManager: !!(window as any).caseManager,
-        renderer: !!(window as any).renderer,
-        caseManagerHasCase: !!((window as any).caseManager?.case),
-        sceneChildrenCount: (window as any).scene?.children?.length || 0
-      })
-    }, 500)
-    
-    setTimeout(() => {
-      console.log('Time 1000ms - Available objects:', {
-        scene: !!(window as any).scene,
-        caseManager: !!(window as any).caseManager,
-        renderer: !!(window as any).renderer,
-        caseManagerHasCase: !!((window as any).caseManager?.case),
-        sceneChildrenCount: (window as any).scene?.children?.length || 0
-      })
-    }, 1000)
+    // Apply to 3D scene using reusable function
+    applyCaseColorToScene(newColor)
   }
   
   const tryUpdateCase = (newColor: string, timing: string) => {
@@ -286,10 +234,26 @@ export function App() {
       minVariantPrice: product.priceRange?.minVariantPrice,
       amount: product.priceRange?.minVariantPrice?.amount
     })
-    setSelectedProducts(prev => ({
-      ...prev,
+    
+    const updatedProducts = {
+      ...selectedProducts,
       [componentType]: product
-    }))
+    }
+    
+    setSelectedProducts(updatedProducts)
+    
+    // Automatically analyze colors when keycaps or case are selected
+    if (componentType === 'keycaps') {
+      console.log('🎨 Auto-analyzing colors for selected keycaps...')
+      setTimeout(() => {
+        handleAnalyzeKeycapColorsWithProducts(updatedProducts)
+      }, 100)
+    } else if (componentType === 'case') {
+      console.log('🏠 Auto-analyzing colors for selected case...')
+      setTimeout(() => {
+        handleAnalyzeCaseColorsWithProducts(updatedProducts)
+      }, 100)
+    }
   }
 
   // Simple cart calculation
@@ -355,32 +319,114 @@ export function App() {
     }
   }
 
-  // Handle color analysis
-  const handleAnalyzeColors = async () => {
+  // Reusable function to apply case color to 3D scene
+  const applyCaseColorToScene = (color: string) => {
+    console.log('🏠 Auto-applying case color to 3D scene:', color)
+    
+    let updatesApplied = 0
+    
+    // Method 1: caseManager approach (most reliable)
+    if ((window as any).caseManager) {
+      const caseManager = (window as any).caseManager
+      console.log('🏠 Using caseManager to update case color')
+      
+      try {
+        caseManager.color = color
+        if (caseManager.updateCaseMaterial) {
+          caseManager.updateCaseMaterial(color)
+          updatesApplied++
+          console.log('✅ caseManager.updateCaseMaterial called')
+        }
+      } catch (error) {
+        console.log('❌ caseManager update failed:', error)
+      }
+    }
+    
+    // Method 2: Scene traversal (backup approach)
+    if ((window as any).scene) {
+      const scene = (window as any).scene
+      let sceneUpdates = 0
+      
+      scene.traverse((object: any) => {
+        // Look for non-key mesh objects (case parts)
+        if (object.material && object.type === 'Mesh') {
+          const isKey = object.name?.toLowerCase().includes('key') || 
+                       object.parent?.name?.toLowerCase().includes('key')
+          
+          if (!isKey) {
+            try {
+              if (Array.isArray(object.material)) {
+                object.material.forEach((mat: any) => {
+                  if (mat.color) {
+                    mat.color.setHex(parseInt(color.replace('#', '0x')))
+                    mat.needsUpdate = true
+                    sceneUpdates++
+                  }
+                })
+              } else if (object.material.color) {
+                object.material.color.setHex(parseInt(color.replace('#', '0x')))
+                object.material.needsUpdate = true
+                sceneUpdates++
+              }
+            } catch (error) {
+              // Silent failure for individual objects
+            }
+          }
+        }
+      })
+      
+      console.log(`🏠 Scene traversal: ${sceneUpdates} case materials updated`)
+      updatesApplied += sceneUpdates > 0 ? 1 : 0
+    }
+    
+    // Method 3: Force render
+    if ((window as any).renderer && (window as any).scene && (window as any).camera) {
+      try {
+        const renderer = (window as any).renderer
+        const scene = (window as any).scene  
+        const camera = (window as any).camera
+        renderer.render(scene, camera)
+        console.log('✅ Forced render for case color update')
+      } catch (error) {
+        console.log('❌ Render failed:', error)
+      }
+    }
+    
+    console.log(`🏠 Total case color updates applied: ${updatesApplied}`)
+    return updatesApplied > 0
+  }
+
+  // Handle keycap color analysis with specific products (fixes state timing issue)
+  const handleAnalyzeKeycapColorsWithProducts = async (products: any) => {
+    if (!products.keycaps) {
+      console.log('⚠️ No keycaps provided for color analysis')
+      return
+    }
+
     setIsAnalyzing(true)
-    console.log('🎨 Starting keyboard color analysis...')
+    console.log('🎨 Starting automatic keycap color analysis with products:', products.keycaps.title)
     
     try {
-      // Get product image
-      const productImage = await colorAnalysis.getProductImage(selectedProducts)
+      // Get product image using the provided products
+      const productImage = await colorAnalysis.getProductImage(products)
       
-      console.log('✅ Got product image:', productImage.substring(0, 50) + '...')
+      console.log('✅ Got keycap product image:', productImage.substring(0, 50) + '...')
       console.log('🖼️ Image data length:', productImage.length, 'bytes')
       
       // Store the image for display in the UI
       setPreviewImage(productImage)
       
       // Perform AI color analysis
-      console.log('🤖 Starting AI color analysis...')
-      const analysisResult = await colorAnalysis.analyzeColorsWithLLM(productImage)
+      console.log('🤖 Starting AI color analysis for keycaps...')
+      const analysisResult = await colorAnalysis.analyzeColorsWithLLM(productImage, 'keycaps')
       
-      console.log('✅ AI analysis completed:', analysisResult)
+      console.log('✅ AI keycap analysis completed:', analysisResult)
       setColorAnalysisResult(analysisResult)
       
       // Extract primary color and apply to keycaps
       if (analysisResult && analysisResult.primary && analysisResult.primary.hex) {
         const primaryColor = analysisResult.primary.hex
-        console.log('🎨 Applying primary color to keycaps:', primaryColor)
+        console.log('🎨 Auto-applying primary color to keycaps:', primaryColor)
         
         // Update React state
         setKeyboardConfig(prev => ({ ...prev, keycap_color: primaryColor }))
@@ -389,28 +435,101 @@ export function App() {
         applyKeycapColorToScene(primaryColor)
         
         // Show success message with color details
-        alert(`🎨 AI Color Analysis Complete!\n\n` +
-              `Primary Color Applied: ${analysisResult.primary.name}\n` +
-              `Hex Code: ${primaryColor}\n` +
-              `Confidence: ${analysisResult.primary.confidence}/10\n\n` +
-              `The keycap color has been automatically applied to your 3D keyboard!`)
+        console.log(`🎨 Auto-applied keycap color: ${analysisResult.primary.name} (${primaryColor})`)
       } else {
-        alert('✅ Analysis complete but no primary color found in results')
+        console.log('⚠️ Keycap analysis complete but no primary color found in results')
       }
       
     } catch (error) {
-      console.error('❌ Color analysis error:', error)
+      console.error('❌ Auto keycap color analysis error:', error)
       console.error('Error stack:', error.stack)
       
-      // Show detailed error information
-      let errorMessage = 'Color analysis failed: ' + error.message
-      if (error.message.includes('Load failed')) {
-        errorMessage += '\n\nPossible causes:\n- Canvas rendering issue\n- Image processing error\n- Network connectivity\n- Check browser console for details'
-      }
-      
-      alert(errorMessage)
+      // Silent failure for automatic analysis - just log the error
+      console.log('❌ Automatic keycap color analysis failed, user can still customize manually')
     } finally {
       setIsAnalyzing(false)
+    }
+  }
+
+  // Handle case color analysis with specific products
+  const handleAnalyzeCaseColorsWithProducts = async (products: any) => {
+    console.log('🏠 === CASE COLOR ANALYSIS DEBUG START ===')
+    console.log('🔍 Products received:', products)
+    console.log('🔍 Case product exists:', !!products.case)
+    console.log('🔍 Case product details:', products.case)
+    
+    if (!products.case) {
+      console.log('⚠️ No case provided for color analysis')
+      return
+    }
+
+    setIsAnalyzing(true)
+    console.log('🏠 Starting automatic case color analysis with products:', products.case.title)
+    
+    try {
+      console.log('📸 Step 1: Getting case product image...')
+      // Get product image using the provided products (case instead of keycaps)
+      const productImage = await colorAnalysis.getProductImage(products)
+      
+      console.log('✅ Got case product image:', productImage.substring(0, 50) + '...')
+      console.log('🖼️ Image data length:', productImage.length, 'bytes')
+      
+      // Store the image for display in the UI
+      setPreviewImage(productImage)
+      
+      console.log('🤖 Step 2: Starting AI color analysis for case...')
+      // Perform AI color analysis with case-specific prompt
+      const analysisResult = await colorAnalysis.analyzeColorsWithLLM(productImage, 'case')
+      
+      console.log('✅ AI case analysis completed:', analysisResult)
+      setColorAnalysisResult(analysisResult)
+      
+      console.log('🎨 Step 3: Applying colors to case...')
+      // Extract primary color and apply to case
+      if (analysisResult && analysisResult.primary && analysisResult.primary.hex) {
+        const primaryColor = analysisResult.primary.hex
+        console.log('🏠 Auto-applying primary color to case:', primaryColor)
+        
+        console.log('🔄 Updating React state...')
+        // Update React state
+        setKeyboardConfig(prev => ({ ...prev, case_color: primaryColor }))
+        
+        console.log('🎨 Applying to 3D model...')
+        // Apply to 3D model using case color function
+        const success = applyCaseColorToScene(primaryColor)
+        
+        if (success) {
+          console.log(`✅ Auto-applied case color: ${analysisResult.primary.name} (${primaryColor})`)
+        } else {
+          console.log(`⚠️ Case color application may have failed`)
+        }
+      } else {
+        console.log('⚠️ Case analysis complete but no primary color found in results')
+        console.log('🔍 Analysis result structure:', JSON.stringify(analysisResult, null, 2))
+      }
+      
+    } catch (error) {
+      console.error('❌ Auto case color analysis error:', error)
+      console.error('❌ Error name:', error.name)
+      console.error('❌ Error message:', error.message)
+      console.error('❌ Error stack:', error.stack)
+      
+      // Silent failure for automatic analysis - just log the error
+      console.log('❌ Automatic case color analysis failed, user can still customize manually')
+    } finally {
+      console.log('🏠 === CASE COLOR ANALYSIS DEBUG END ===')
+      setIsAnalyzing(false)
+    }
+  }
+
+  // Handle color analysis (fallback for backward compatibility)
+  const handleAnalyzeColors = async () => {
+    if (selectedProducts.keycaps) {
+      return handleAnalyzeKeycapColorsWithProducts(selectedProducts)
+    } else if (selectedProducts.case) {
+      return handleAnalyzeCaseColorsWithProducts(selectedProducts)
+    } else {
+      console.log('⚠️ No keycaps or case selected for color analysis')
     }
   }
 
@@ -804,203 +923,48 @@ export function App() {
               switchColor={keyboardConfig.switch_color}
             />
             
+            {/* Auto Color Analysis Loading Overlay */}
+            {isAnalyzing && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                <div className={`border rounded-2xl p-6 text-center ${
+                  selectedProducts.case ? 
+                    'bg-orange-900/90 border-orange-700/50' : 
+                    'bg-violet-900/90 border-violet-700/50'
+                }`}>
+                  <div className={`w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-4 ${
+                    selectedProducts.case ?
+                      'border-orange-400/30 border-t-orange-400' :
+                      'border-violet-400/30 border-t-violet-400'
+                  }`}></div>
+                  <h3 className={`font-medium mb-2 ${
+                    selectedProducts.case ? 
+                      'text-orange-300' : 
+                      'text-violet-300'
+                  }`}>
+                    {selectedProducts.case ? '🏠 Analyzing Case Colors' : '🤖 Analyzing Keycap Colors'}
+                  </h3>
+                  <p className={`text-sm ${
+                    selectedProducts.case ? 
+                      'text-orange-400/80' : 
+                      'text-violet-400/80'
+                  }`}>
+                    {selectedProducts.case ? 
+                      'AI is detecting case colors and applying them to your keyboard...' :
+                      'AI is detecting keycap colors and applying them to your keyboard...'
+                    }
+                  </p>
+                </div>
+              </div>
+            )}
+            
             {/* Touch to rotate hint */}
             <div className="absolute bottom-4 left-4 text-slate-400 text-xs">
               Drag to rotate • Pinch to zoom
             </div>
           </div>
 
-          {/* Image Preview for Color Analysis */}
-          {previewImage && (
-            <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-violet-900/20 to-purple-900/20 border border-violet-700/30 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-violet-300">🖼️ Image for Color Analysis</h3>
-                <button
-                  onClick={() => setPreviewImage(null)}
-                  className="text-violet-400 hover:text-violet-300 transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="mb-4 text-sm text-slate-400">
-                <p><strong>Source:</strong> {selectedProducts?.keycaps ? 'Selected keycaps product' : '3D scene fallback'}</p>
-                <p><strong>Size:</strong> {Math.round(previewImage.length / 1024)} KB</p>
-                <p><strong>Status:</strong> ✅ Ready for analysis</p>
-              </div>
-              
-              <div className="rounded-xl overflow-hidden border border-violet-700/20">
-                <img 
-                  src={previewImage} 
-                  alt="Keycaps for color analysis" 
-                  className="w-full max-h-64 object-contain bg-white/10"
-                />
-              </div>
-              
-              <div className="mt-4 flex space-x-3 justify-center">
-                <button
-                  onClick={async () => {
-                    if (!previewImage) return;
-                    
-                    setIsAnalyzing(true);
-                    try {
-                      console.log('🤖 Starting AI analysis...');
-                      
-                      // Send the preview image to AI for analysis
-                      const analysisResult = await colorAnalysis.analyzeColorsWithLLM(previewImage);
-                      
-                      console.log('✅ AI analysis completed:', analysisResult);
-                      setColorAnalysisResult(analysisResult);
-                      
-                      // Show the results
-                      alert(`🎨 Colors detected by AI!\n\nPrimary: ${analysisResult.primary.name} (${analysisResult.primary.hex})\nModifier: ${analysisResult.modifier?.name || 'N/A'} (${analysisResult.modifier?.hex || 'N/A'})\nAccent: ${analysisResult.accent?.name || 'N/A'} (${analysisResult.accent?.hex || 'N/A'})\n\nConfidence scores: ${analysisResult.primary.confidence}/10, ${analysisResult.modifier?.confidence || 0}/10, ${analysisResult.accent?.confidence || 0}/10`);
-                      
-                    } catch (error) {
-                      console.error('❌ AI analysis failed:', error);
-                      alert('❌ Analysis failed: ' + error.message);
-                    } finally {
-                      setIsAnalyzing(false);
-                    }
-                  }}
-                  disabled={isAnalyzing}
-                  className={`font-medium py-2 px-4 rounded-lg transition-all duration-200 ${
-                    isAnalyzing 
-                      ? 'bg-violet-600/50 text-violet-300 cursor-not-allowed'
-                      : 'bg-violet-600 hover:bg-violet-700 text-white'
-                  }`}
-                >
-                  {isAnalyzing ? '🔄 Analyzing...' : '✨ Analyze Colors'}
-                </button>
-                
-                {colorAnalysisResult && colorAnalysisResult.primary && (
-                  <button
-                    onClick={() => {
-                      const primaryColor = colorAnalysisResult.primary.hex;
-                      console.log('🎨 Applying analyzed primary color:', primaryColor);
-                      
-                      // Update React state
-                      setKeyboardConfig(prev => ({ ...prev, keycap_color: primaryColor }));
-                      
-                      // Apply to 3D model
-                      applyKeycapColorToScene(primaryColor);
-                      
-                      alert(`✅ Applied primary color: ${colorAnalysisResult.primary.name} (${primaryColor}) to your keyboard!`);
-                    }}
-                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
-                  >
-                    🎨 Apply Primary Color
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* Color Analysis Results Display */}
-          {colorAnalysisResult && (
-            <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-emerald-900/20 to-green-900/20 border border-emerald-700/30 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-emerald-300">🎨 AI Color Analysis Results</h3>
-                <button
-                  onClick={() => setColorAnalysisResult(null)}
-                  className="text-emerald-400 hover:text-emerald-300 transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Primary Color */}
-                {colorAnalysisResult.primary && (
-                  <div className="bg-white/10 rounded-lg p-4">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div
-                        className="w-8 h-8 rounded-lg border-2 border-white/20"
-                        style={{ backgroundColor: colorAnalysisResult.primary.hex }}
-                      ></div>
-                      <div>
-                        <h4 className="text-white font-medium text-sm">Primary</h4>
-                        <p className="text-emerald-300 text-xs">{colorAnalysisResult.primary.name}</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-300 text-xs mb-2">{colorAnalysisResult.primary.hex}</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-slate-400">Confidence: {colorAnalysisResult.primary.confidence}/10</span>
-                      <button
-                        onClick={() => {
-                          setKeyboardConfig(prev => ({ ...prev, keycap_color: colorAnalysisResult.primary.hex }));
-                          applyKeycapColorToScene(colorAnalysisResult.primary.hex);
-                          alert(`✅ Applied ${colorAnalysisResult.primary.name} to keycaps!`);
-                        }}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2 py-1 rounded transition-all duration-200"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-                )}
 
-                {/* Modifier Color */}
-                {colorAnalysisResult.modifier && (
-                  <div className="bg-white/10 rounded-lg p-4">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div
-                        className="w-8 h-8 rounded-lg border-2 border-white/20"
-                        style={{ backgroundColor: colorAnalysisResult.modifier.hex }}
-                      ></div>
-                      <div>
-                        <h4 className="text-white font-medium text-sm">Modifier</h4>
-                        <p className="text-emerald-300 text-xs">{colorAnalysisResult.modifier.name}</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-300 text-xs mb-2">{colorAnalysisResult.modifier.hex}</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-slate-400">Confidence: {colorAnalysisResult.modifier.confidence}/10</span>
-                      <button
-                        onClick={() => {
-                          setKeyboardConfig(prev => ({ ...prev, keycap_color: colorAnalysisResult.modifier.hex }));
-                          applyKeycapColorToScene(colorAnalysisResult.modifier.hex);
-                          alert(`✅ Applied ${colorAnalysisResult.modifier.name} to keycaps!`);
-                        }}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2 py-1 rounded transition-all duration-200"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Accent Color */}
-                {colorAnalysisResult.accent && (
-                  <div className="bg-white/10 rounded-lg p-4">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div
-                        className="w-8 h-8 rounded-lg border-2 border-white/20"
-                        style={{ backgroundColor: colorAnalysisResult.accent.hex }}
-                      ></div>
-                      <div>
-                        <h4 className="text-white font-medium text-sm">Accent</h4>
-                        <p className="text-emerald-300 text-xs">{colorAnalysisResult.accent.name}</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-300 text-xs mb-2">{colorAnalysisResult.accent.hex}</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-slate-400">Confidence: {colorAnalysisResult.accent.confidence}/10</span>
-                      <button
-                        onClick={() => {
-                          setKeyboardConfig(prev => ({ ...prev, keycap_color: colorAnalysisResult.accent.hex }));
-                          applyKeycapColorToScene(colorAnalysisResult.accent.hex);
-                          alert(`✅ Applied ${colorAnalysisResult.accent.name} to keycaps!`);
-                        }}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2 py-1 rounded transition-all duration-200"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Component Details */}
           <div className="space-y-4 mb-32 relative z-20">
@@ -1019,28 +983,50 @@ export function App() {
                   console.log('Keycaps button touched!')
                   setSelectedComponent('keycaps')
                 }}
-                className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-900/60 hover:border-blue-500/50 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation"
+                className={`bg-slate-900/40 border rounded-xl p-4 hover:bg-slate-900/60 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation ${
+                  isAnalyzing 
+                    ? 'border-violet-500/50 bg-violet-900/20' 
+                    : 'border-slate-700/50 hover:border-blue-500/50'
+                }`}
               >
                 <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full group-hover:scale-110 transition-transform"></div>
-                  <h3 className="text-white font-medium text-sm group-hover:text-blue-300 transition-colors">Keycaps</h3>
-                  <svg className="w-3 h-3 text-slate-500 group-hover:text-blue-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <div className={`w-3 h-3 rounded-full transition-transform ${
+                    isAnalyzing 
+                      ? 'bg-violet-500 animate-pulse' 
+                      : 'bg-blue-500 group-hover:scale-110'
+                  }`}></div>
+                  <h3 className={`font-medium text-sm transition-colors ${
+                    isAnalyzing 
+                      ? 'text-violet-300' 
+                      : 'text-white group-hover:text-blue-300'
+                  }`}>
+                    Keycaps {isAnalyzing && '🤖'}
+                  </h3>
+                  {isAnalyzing ? (
+                    <div className="w-3 h-3 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin ml-auto"></div>
+                  ) : (
+                    <svg className="w-3 h-3 text-slate-500 group-hover:text-blue-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
                 </div>
                 {selectedProducts.keycaps ? (
                   <>
                     <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.keycaps.title}</p>
-                    <p className="text-green-400 text-xs mt-1">${(() => {
-                      const product = selectedProducts.keycaps
-                      return product.priceRange?.minVariantPrice?.amount ||
-                             product.priceRange?.min?.amount ||
-                             product.variants?.[0]?.priceV2?.amount ||
-                             product.variants?.[0]?.price ||
-                             product.price?.amount ||
-                             product.price ||
-                             'N/A'
-                    })()}</p>
+                    {isAnalyzing ? (
+                      <p className="text-violet-400 text-xs mt-1 animate-pulse">Analyzing colors...</p>
+                    ) : (
+                      <p className="text-green-400 text-xs mt-1">${(() => {
+                        const product = selectedProducts.keycaps
+                        return product.priceRange?.minVariantPrice?.amount ||
+                               product.priceRange?.min?.amount ||
+                               product.variants?.[0]?.priceV2?.amount ||
+                               product.variants?.[0]?.price ||
+                               product.price?.amount ||
+                               product.price ||
+                               'N/A'
+                      })()}</p>
+                    )}
                   </>
                 ) : (
                   <>
@@ -1109,28 +1095,50 @@ export function App() {
                   console.log('Case button touched!')
                   setSelectedComponent('case')
                 }}
-                className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-900/60 hover:border-slate-400/50 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation"
+                className={`bg-slate-900/40 border rounded-xl p-4 hover:bg-slate-900/60 transition-all duration-200 text-left group cursor-pointer relative z-30 touch-manipulation ${
+                  isAnalyzing && selectedProducts.case
+                    ? 'border-orange-500/50 bg-orange-900/20' 
+                    : 'border-slate-700/50 hover:border-slate-400/50'
+                }`}
               >
                 <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-3 h-3 bg-slate-500 rounded-full group-hover:scale-110 transition-transform"></div>
-                  <h3 className="text-white font-medium text-sm group-hover:text-slate-300 transition-colors">Case</h3>
-                  <svg className="w-3 h-3 text-slate-500 group-hover:text-slate-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <div className={`w-3 h-3 rounded-full transition-transform ${
+                    isAnalyzing && selectedProducts.case
+                      ? 'bg-orange-500 animate-pulse' 
+                      : 'bg-slate-500 group-hover:scale-110'
+                  }`}></div>
+                  <h3 className={`font-medium text-sm transition-colors ${
+                    isAnalyzing && selectedProducts.case
+                      ? 'text-orange-300' 
+                      : 'text-white group-hover:text-slate-300'
+                  }`}>
+                    Case {isAnalyzing && selectedProducts.case && '🏠'}
+                  </h3>
+                  {isAnalyzing && selectedProducts.case ? (
+                    <div className="w-3 h-3 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin ml-auto"></div>
+                  ) : (
+                    <svg className="w-3 h-3 text-slate-500 group-hover:text-slate-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
                 </div>
                 {selectedProducts.case ? (
                   <>
                     <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.case.title}</p>
-                    <p className="text-green-400 text-xs mt-1">${(() => {
-                      const product = selectedProducts.case
-                      return product.priceRange?.minVariantPrice?.amount ||
-                             product.priceRange?.min?.amount ||
-                             product.variants?.[0]?.priceV2?.amount ||
-                             product.variants?.[0]?.price ||
-                             product.price?.amount ||
-                             product.price ||
-                             'N/A'
-                    })()}</p>
+                    {isAnalyzing && selectedProducts.case ? (
+                      <p className="text-orange-400 text-xs mt-1 animate-pulse">Analyzing colors...</p>
+                    ) : (
+                      <p className="text-green-400 text-xs mt-1">${(() => {
+                        const product = selectedProducts.case
+                        return product.priceRange?.minVariantPrice?.amount ||
+                               product.priceRange?.min?.amount ||
+                               product.variants?.[0]?.priceV2?.amount ||
+                               product.variants?.[0]?.price ||
+                               product.price?.amount ||
+                               product.price ||
+                               'N/A'
+                      })()}</p>
+                    )}
                   </>
                 ) : (
                   <>
@@ -1156,17 +1164,6 @@ export function App() {
                 className="flex-1 bg-slate-900/60 border border-slate-700/50 text-slate-300 font-medium py-3 px-3 rounded-xl hover:bg-slate-900/80 transition-all duration-200 text-sm"
               >
                 Customize Case
-              </button>
-              <button 
-                onClick={handleAnalyzeColors}
-                disabled={isAnalyzing}
-                className={`flex-1 border font-medium py-3 px-3 rounded-xl transition-all duration-200 text-sm ${
-                  isAnalyzing 
-                    ? 'bg-violet-900/30 border-violet-700/30 text-violet-500 cursor-not-allowed'
-                    : 'bg-violet-900/60 border-violet-700/50 text-violet-300 hover:bg-violet-900/80'
-                }`}
-              >
-                {isAnalyzing ? '🔄 Analyzing...' : '🤖 Analyze Colors'}
               </button>
               <button
                 onClick={() => setIsCartOpen(true)}

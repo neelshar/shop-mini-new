@@ -154,12 +154,13 @@ export class ColorAnalysisSystem {
   }
 
   /**
-   * Analyze keycap colors using LLM vision API
+   * Analyze colors using LLM vision API with specific prompts
    * @param {string} imageDataURL - Base64 image data
+   * @param {string} analysisType - 'keycaps' or 'case' 
    * @returns {Promise<Object>} - Color analysis results
    */
-  async analyzeColorsWithLLM(imageDataURL) {
-    console.log('🤖 Starting LLM color analysis...');
+  async analyzeColorsWithLLM(imageDataURL, analysisType = 'keycaps') {
+    console.log(`🤖 Starting LLM color analysis for ${analysisType}...`);
     
     if (!this.apiKey) {
       throw new Error('No API key configured for LLM analysis');
@@ -180,19 +181,15 @@ export class ColorAnalysisSystem {
       throw new Error(`Image too large: ${imageSizeKB}KB (max 5000KB). Please select a smaller image.`);
     }
     
-    // OpenAI GPT-4 Vision format - much simpler!
-    const requestBody = {
-      model: this.model,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Analyze this keyboard image and identify the keycap colors. Please provide:
-1. The primary keycap color (most common keycaps)
-2. Any modifier key colors (different colored keys like Shift, Ctrl, etc.)  
-3. Any accent colors (special keys, Enter, etc.)
+    // Generate different prompts based on analysis type
+    const getPromptForType = (type) => {
+      if (type === 'case') {
+        return `Analyze this mechanical keyboard image and identify the KEYBOARD CASE colors (not the keycaps). Focus on:
+1. The primary case/housing color (the main body/frame of the keyboard)
+2. Any secondary case colors (different colored sections of the case/housing)
+3. Any accent colors on the case itself (trim, bezels, or decorative elements)
+
+IMPORTANT: Ignore the keycaps completely - only analyze the keyboard case/housing colors.
 
 For each color, provide:
 - A descriptive name
@@ -204,7 +201,39 @@ Format your response as JSON:
   "primary": {"name": "color name", "hex": "#hexcode", "confidence": 8},
   "modifier": {"name": "color name", "hex": "#hexcode", "confidence": 7},
   "accent": {"name": "color name", "hex": "#hexcode", "confidence": 9}
-}`
+}`;
+      } else {
+        return `Analyze this keyboard image and identify the keycap colors (not the case). Please provide:
+1. The primary keycap color (most common keycaps)
+2. Any modifier key colors (different colored keys like Shift, Ctrl, etc.)  
+3. Any accent colors (special keys, Enter, etc.)
+
+IMPORTANT: Only analyze the keycaps/keys, ignore the keyboard case/housing.
+
+For each color, provide:
+- A descriptive name
+- The hex color code (your best estimate)
+- Confidence level (1-10)
+
+Format your response as JSON:
+{
+  "primary": {"name": "color name", "hex": "#hexcode", "confidence": 8},
+  "modifier": {"name": "color name", "hex": "#hexcode", "confidence": 7},
+  "accent": {"name": "color name", "hex": "#hexcode", "confidence": 9}
+}`;
+      }
+    };
+
+    // OpenAI GPT-4 Vision format with dynamic prompts
+    const requestBody = {
+      model: this.model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: getPromptForType(analysisType)
             },
             {
               type: 'image_url',
@@ -381,41 +410,53 @@ Format your response as JSON:
   }
 
   /**
-   * Get product image from selected keycaps
+   * Get product image from selected products (keycaps or case)
    * @param {Object} selectedProducts - Selected products object
    * @returns {Promise<string>} - Product image URL or data URL
    */
   async getProductImage(selectedProducts) {
-    console.log('🖼️ Getting product image from selected keycaps...');
+    console.log('🖼️ Getting product image from selected products...');
     console.log('🔍 Selected products:', selectedProducts);
     
-    // Check if keycaps are selected
-    if (!selectedProducts || !selectedProducts.keycaps) {
-      throw new Error('No keycaps selected. Please select keycaps first.');
+    let targetProduct = null;
+    let productType = '';
+    
+    // Check what type of product is selected (prioritize the one we're analyzing)
+    if (selectedProducts?.case) {
+      targetProduct = selectedProducts.case;
+      productType = 'case';
+      console.log('🏠 Using case product for analysis');
+    } else if (selectedProducts?.keycaps) {
+      targetProduct = selectedProducts.keycaps;
+      productType = 'keycaps';
+      console.log('🎨 Using keycaps product for analysis');
     }
     
-    const keycapsProduct = selectedProducts.keycaps;
-    console.log('🔍 Keycaps product:', keycapsProduct);
+    if (!targetProduct) {
+      throw new Error('No keycaps or case selected. Please select a product first.');
+    }
+    
+    console.log(`🔍 ${productType} product:`, targetProduct);
     
     // Try to get product image URL from various possible locations
-    const imageUrl = keycapsProduct.image?.url ||
-                     keycapsProduct.images?.[0]?.url ||
-                     keycapsProduct.featuredImage?.url ||
-                     keycapsProduct.images?.[0]?.src ||
-                     keycapsProduct.image?.src ||
-                     keycapsProduct.src;
+    const imageUrl = targetProduct.image?.url ||
+                     targetProduct.images?.[0]?.url ||
+                     targetProduct.featuredImage?.url ||
+                     targetProduct.images?.[0]?.src ||
+                     targetProduct.image?.src ||
+                     targetProduct.src;
     
     if (!imageUrl) {
       // If no image URL, try to capture the 3D scene as fallback
-      console.log('⚠️ No product image found, falling back to 3D scene capture...');
+      console.log(`⚠️ No ${productType} image found, falling back to 3D scene capture...`);
       const renderer = window.renderer;
       if (!renderer) {
-        throw new Error('No product image available and 3D renderer not found');
+        throw new Error(`No ${productType} image available and 3D renderer not found`);
       }
       return await this.captureScene(renderer);
     }
     
-    console.log('✅ Found product image URL:', imageUrl);
+    console.log(`✅ Found ${productType} image URL:`, imageUrl);
     
     // Convert external image URL to data URL for API
     return await this.loadImageAsDataURL(imageUrl);
