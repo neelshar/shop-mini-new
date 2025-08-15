@@ -125,7 +125,7 @@ export function MultiProfileKeyboardSounds({
   // Generate unique instance ID to track multiple component instances
   const instanceId = useRef(Math.random().toString(36).substr(2, 9));
   
-  console.log('🎹 MultiProfileKeyboardSounds component loaded! Instance:', instanceId.current);
+  // MultiProfileKeyboardSounds component loaded
   
   const [audioInitialized, setAudioInitialized] = useState(false);
   const [audioMuted, setAudioMuted] = useState(true); // Start muted by default
@@ -193,7 +193,6 @@ export function MultiProfileKeyboardSounds({
   // Expose playKeyboardSound function to parent component
   useEffect(() => {
     if (onVirtualKeyPress) {
-      console.log('🎹 Exposing playKeyboardSound function to parent');
       onVirtualKeyPress(playKeyboardSound);
     }
   }, [onVirtualKeyPress, audioInitialized, selectedProfile]);

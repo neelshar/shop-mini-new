@@ -78,11 +78,8 @@ export function ComponentSearchModal({
   }, [isOpen])
 
   if (!isOpen || !componentType) {
-    console.log('Modal not showing:', { isOpen, componentType })
     return null
   }
-  
-  console.log('Modal is showing for:', componentType)
 
   const componentIcons = {
     keycaps: '🎛️',

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useShopCartActions } from '@shopify/shop-minis-react'
 import { RealKeysim } from './components/RealKeysim'
 import { ComponentSearchModal } from './components/ComponentSearchModal'
 import { MultiProfileKeyboardSounds } from './components/MultiProfileKeyboardSounds'
@@ -25,6 +26,9 @@ type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer' | 'case-cust
 
 
 export function App() {
+  // Shopify cart actions
+  const { addToCart, buyProduct } = useShopCartActions()
+  
   const [currentPage, setCurrentPage] = useState<AppPage>('welcome')
   const [keyboardConfig, setKeyboardConfig] = useState<KeyboardConfig>({
     layout: 'tkl',
@@ -53,6 +57,8 @@ export function App() {
 
   // Simple cart state
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [isBuying, setIsBuying] = useState(false)
 
   // Color analysis state
   const [colorAnalysisResult, setColorAnalysisResult] = useState<any>(null)
@@ -62,6 +68,27 @@ export function App() {
   const [currentSoundProfile, setCurrentSoundProfile] = useState<string>('holy-pandas')
   const [autoSwitchAnalysisResult, setAutoSwitchAnalysisResult] = useState<any>(null)
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false) // Start with audio muted
+  
+  // Cart Debug Panel State
+  const [cartDebugLogs, setCartDebugLogs] = useState<Array<{
+    timestamp: number,
+    level: 'info' | 'error' | 'success' | 'warning',
+    message: string,
+    data?: any
+  }>>([])
+  const [showCartDebug, setShowCartDebug] = useState(false)
+  
+  // Cart Debug Logger
+  const addCartDebugLog = (level: 'info' | 'error' | 'success' | 'warning', message: string, data?: any) => {
+    const logEntry = {
+      timestamp: Date.now(),
+      level,
+      message,
+      data
+    }
+    setCartDebugLogs(prev => [logEntry, ...prev.slice(0, 49)]) // Keep last 50 logs
+    console.log(`🛒 [${level.toUpperCase()}] ${message}`, data || '')
+  }
 
   // Case color options - used in both customizer and case-customizer
   const caseColorOptions = [
@@ -274,23 +301,10 @@ export function App() {
     return `${keyboardConfig.switches.charAt(0).toUpperCase() + keyboardConfig.switches.slice(1)} Switch`;
   };
 
-  // Debug logging for switch state
-  console.log('🔊 App: Switch state debug:', {
-    selectedProductsSwitch: selectedProducts.switches?.title || 'none',
-    keyboardConfigSwitches: keyboardConfig.switches,
-    hasSelectedSwitch,
-    getCurrentSwitchName: getCurrentSwitchName(),
-    isAudioEnabled
-  });
+  // Switch state tracking (debug logging removed for cleaner console)
 
   // Handle product selection
   const handleProductSelect = (product: any, componentType: 'keycaps' | 'switches' | 'case') => {
-    console.log(`Selected ${componentType}:`, product)
-    console.log('Product price structure:', {
-      priceRange: product.priceRange,
-      minVariantPrice: product.priceRange?.minVariantPrice,
-      amount: product.priceRange?.minVariantPrice?.amount
-    })
     
     const updatedProducts = {
       ...selectedProducts,
@@ -301,12 +315,10 @@ export function App() {
     
     // Automatically analyze colors when keycaps or case are selected
     if (componentType === 'keycaps') {
-      console.log('🎨 Auto-analyzing colors for selected keycaps...')
       setTimeout(() => {
         handleAnalyzeKeycapColorsWithProducts(updatedProducts)
       }, 100)
     } else if (componentType === 'case') {
-      console.log('🏠 Auto-analyzing colors for selected case...')
       setTimeout(() => {
         handleAnalyzeCaseColorsWithProducts(updatedProducts)
       }, 100)
@@ -333,6 +345,269 @@ export function App() {
     if (selectedProducts.case) total += getPrice(selectedProducts.case)
     
     return total > 0 ? total : 399
+  }
+
+  // Add all selected products to Shopify cart
+  const handleAddToCart = async () => {
+    if (isAddingToCart) return // Prevent double-clicks
+    
+    setIsAddingToCart(true)
+    setCartDebugLogs([]) // Clear previous logs
+    setShowCartDebug(true) // Show debug panel
+    
+    try {
+      addCartDebugLog('info', '========== CART DEBUG START ==========')
+      addCartDebugLog('info', 'Starting add to cart process...')
+      addCartDebugLog('info', 'Selected products:', selectedProducts)
+      addCartDebugLog('info', 'Hook functions available:', { 
+        addToCart: typeof addToCart, 
+        buyProduct: typeof buyProduct 
+      })
+      
+      const cartPromises = []
+      let debugInfo = []
+      
+      // Add keycaps to cart
+      if (selectedProducts.keycaps) {
+        const keycapsProduct = selectedProducts.keycaps
+        addCartDebugLog('info', '========== KEYCAPS DEBUG ==========')
+        addCartDebugLog('info', 'Full keycaps product:', keycapsProduct)
+        
+        const productId = keycapsProduct.id
+        // Get variant ID from defaultVariantId or first variant, NOT product ID
+        const variantId = keycapsProduct.defaultVariantId || 
+                         keycapsProduct.variants?.[0]?.id || 
+                         null // Don't fallback to product ID
+        
+        addCartDebugLog('info', 'Keycaps extracted IDs:', { 
+          productId, 
+          variantId,
+          productIdType: typeof productId,
+          variantIdType: typeof variantId,
+          hasVariants: !!keycapsProduct.variants,
+          variantsLength: keycapsProduct.variants?.length,
+          firstVariant: keycapsProduct.variants?.[0]
+        })
+        
+        // Validate IDs
+        if (!productId) {
+          addCartDebugLog('error', 'Keycaps product ID is missing or invalid')
+          throw new Error('Keycaps product ID is missing or invalid')
+        }
+        if (!variantId) {
+          addCartDebugLog('error', 'Keycaps variant ID is missing or invalid')
+          throw new Error('Keycaps variant ID is missing or invalid')
+        }
+        
+        const keycapsCartParams = {
+          productId,
+          productVariantId: variantId,
+          quantity: 1,
+        }
+        
+        addCartDebugLog('info', 'Keycaps cart params:', keycapsCartParams)
+        debugInfo.push({ type: 'keycaps', params: keycapsCartParams })
+        
+        cartPromises.push(
+          addToCart(keycapsCartParams).catch(error => {
+            addCartDebugLog('error', 'Keycaps cart error:', error)
+            throw new Error(`Keycaps add to cart failed: ${error.message}`)
+          })
+        )
+      }
+      
+      // Add switches to cart
+      if (selectedProducts.switches) {
+        const switchesProduct = selectedProducts.switches
+        addCartDebugLog('info', '========== SWITCHES DEBUG ==========')
+        addCartDebugLog('info', 'Full switches product:', switchesProduct)
+        
+        const productId = switchesProduct.id
+        // Get variant ID from defaultVariantId or first variant, NOT product ID
+        const variantId = switchesProduct.defaultVariantId || 
+                         switchesProduct.variants?.[0]?.id || 
+                         null // Don't fallback to product ID
+        
+        addCartDebugLog('info', 'Switches extracted IDs:', { 
+          productId, 
+          variantId,
+          productIdType: typeof productId,
+          variantIdType: typeof variantId,
+          hasVariants: !!switchesProduct.variants,
+          variantsLength: switchesProduct.variants?.length,
+          firstVariant: switchesProduct.variants?.[0]
+        })
+        
+        // Validate IDs
+        if (!productId) {
+          addCartDebugLog('error', 'Switches product ID is missing or invalid')
+          throw new Error('Switches product ID is missing or invalid')
+        }
+        if (!variantId) {
+          addCartDebugLog('error', 'Switches variant ID is missing or invalid')
+          throw new Error('Switches variant ID is missing or invalid')
+        }
+        
+        const switchesCartParams = {
+          productId,
+          productVariantId: variantId,
+          quantity: 1,
+        }
+        
+        addCartDebugLog('info', 'Switches cart params:', switchesCartParams)
+        debugInfo.push({ type: 'switches', params: switchesCartParams })
+        
+        cartPromises.push(
+          addToCart(switchesCartParams).catch(error => {
+            addCartDebugLog('error', 'Switches cart error:', error)
+            throw new Error(`Switches add to cart failed: ${error.message}`)
+          })
+        )
+      }
+      
+      // Add case to cart
+      if (selectedProducts.case) {
+        const caseProduct = selectedProducts.case
+        addCartDebugLog('info', '========== CASE DEBUG ==========')
+        addCartDebugLog('info', 'Full case product:', caseProduct)
+        
+        const productId = caseProduct.id
+        // Get variant ID from defaultVariantId or first variant, NOT product ID
+        const variantId = caseProduct.defaultVariantId || 
+                         caseProduct.variants?.[0]?.id || 
+                         null // Don't fallback to product ID
+        
+        addCartDebugLog('info', 'Case extracted IDs:', { 
+          productId, 
+          variantId,
+          productIdType: typeof productId,
+          variantIdType: typeof variantId,
+          hasVariants: !!caseProduct.variants,
+          variantsLength: caseProduct.variants?.length,
+          firstVariant: caseProduct.variants?.[0]
+        })
+        
+        // Validate IDs
+        if (!productId) {
+          addCartDebugLog('error', 'Case product ID is missing or invalid')
+          throw new Error('Case product ID is missing or invalid')
+        }
+        if (!variantId) {
+          addCartDebugLog('error', 'Case variant ID is missing or invalid')
+          throw new Error('Case variant ID is missing or invalid')
+        }
+        
+        const caseCartParams = {
+          productId,
+          productVariantId: variantId,
+          quantity: 1,
+        }
+        
+        addCartDebugLog('info', 'Case cart params:', caseCartParams)
+        debugInfo.push({ type: 'case', params: caseCartParams })
+        
+        cartPromises.push(
+          addToCart(caseCartParams).catch(error => {
+            addCartDebugLog('error', 'Case cart error:', error)
+            throw new Error(`Case add to cart failed: ${error.message}`)
+          })
+        )
+      }
+      
+      addCartDebugLog('info', '========== EXECUTING CART OPERATIONS ==========')
+      addCartDebugLog('info', 'Cart promises count:', cartPromises.length)
+      addCartDebugLog('info', 'Debug info summary:', debugInfo)
+      
+      // Execute all cart additions
+      const results = await Promise.allSettled(cartPromises)
+      
+      addCartDebugLog('info', '========== CART RESULTS ==========')
+      results.forEach((result, index) => {
+        const resultData = {
+          status: result.status,
+          value: result.status === 'fulfilled' ? result.value : undefined,
+          reason: result.status === 'rejected' ? result.reason : undefined,
+          debugInfo: debugInfo[index]
+        }
+        addCartDebugLog(result.status === 'fulfilled' ? 'success' : 'error', `Result ${index + 1}:`, resultData)
+      })
+      
+      // Check if any failed
+      const failures = results.filter(r => r.status === 'rejected')
+      if (failures.length > 0) {
+        addCartDebugLog('error', 'Some items failed to add to cart:', failures)
+        throw new Error(`${failures.length} items failed to add to cart`)
+      }
+      
+      addCartDebugLog('success', 'Successfully added all items to cart!')
+      
+      // Optional: Show success message or close cart modal
+      setIsCartOpen(false)
+      
+    } catch (error) {
+      addCartDebugLog('error', '========== CART ERROR ==========')
+      addCartDebugLog('error', 'Error adding items to cart:', error)
+      addCartDebugLog('error', 'Error details:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        constructor: error?.constructor?.name,
+        fullError: error
+      })
+      addCartDebugLog('error', 'Selected products at error:', selectedProducts)
+      addCartDebugLog('error', 'Hook functions at error:', { 
+        addToCart: typeof addToCart, 
+        buyProduct: typeof buyProduct 
+      })
+      
+      // More detailed error message
+      let errorMessage = 'Failed to add items to cart. '
+      if (error?.message) {
+        errorMessage += `Error: ${error.message}. `
+      }
+      errorMessage += 'Check console for detailed debugging information.'
+      
+      alert(errorMessage)
+    } finally {
+      setIsAddingToCart(false)
+      addCartDebugLog('info', '========== CART DEBUG END ==========')
+    }
+  }
+
+  // Buy all selected products directly (skip cart)
+  const handleBuyNow = async () => {
+    if (isBuying) return // Prevent double-clicks
+    
+    setIsBuying(true)
+    try {
+      console.log('💳 Starting buy now process...', selectedProducts)
+      
+      // For buy now, we'll add the most important item (keycaps) directly
+      // Note: buyProduct typically handles one product at a time
+      if (selectedProducts.keycaps) {
+        const keycapsProduct = selectedProducts.keycaps
+        const productId = keycapsProduct.id
+        const variantId = keycapsProduct.variants?.[0]?.id || keycapsProduct.id
+        
+        console.log('🎛️ Buying keycaps directly:', { productId, variantId })
+        await buyProduct({
+          productId,
+          productVariantId: variantId,
+          quantity: 1,
+        })
+        
+        console.log('✅ Successfully initiated purchase!')
+      } else {
+        console.log('⚠️ No keycaps selected for purchase')
+        alert('Please select keycaps to purchase')
+      }
+      
+    } catch (error) {
+      console.error('❌ Error with buy now:', error)
+      alert('Failed to process purchase. Please try again.')
+    } finally {
+      setIsBuying(false)
+    }
   }
 
   // Smart function to detect if keycap set is multi-color
@@ -1612,8 +1887,19 @@ export function App() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H17M9 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM20 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                 </svg>
               </button>
-              <button className="flex-1 bg-white text-slate-950 font-medium py-3 px-3 rounded-xl hover:shadow-lg transition-all duration-200 text-sm">
-                Add to Cart - ${calculateCartTotal().toFixed(2)}
+              <button 
+                onClick={handleAddToCart}
+                disabled={(!selectedProducts.keycaps && !selectedProducts.switches && !selectedProducts.case) || isAddingToCart}
+                className="flex-1 bg-white text-slate-950 font-medium py-3 px-3 rounded-xl hover:shadow-lg transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {isAddingToCart ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Adding...</span>
+                  </>
+                ) : (
+                  <span>Add to Cart - ${calculateCartTotal().toFixed(2)}</span>
+                )}
               </button>
             </div>
           </div>
@@ -1743,9 +2029,142 @@ export function App() {
                   </div>
                 </div>
 
-                {/* Checkout Button */}
-                <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25 active:scale-95">
-                  Proceed to Checkout
+                {/* Cart Action Buttons */}
+                <div className="space-y-3">
+                  <button 
+                    onClick={handleAddToCart}
+                    disabled={(!selectedProducts.keycaps && !selectedProducts.switches && !selectedProducts.case) || isAddingToCart}
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {isAddingToCart ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Adding to Cart...</span>
+                      </>
+                    ) : (
+                      <span>Add All to Cart</span>
+                    )}
+                  </button>
+                  
+                  <button 
+                    onClick={handleBuyNow}
+                    disabled={!selectedProducts.keycaps || isBuying}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-green-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {isBuying ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <span>Buy Keycaps Now</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cart Debug Panel - Visible in UI */}
+        {showCartDebug && cartDebugLogs.length > 0 && (
+          <div className="fixed bottom-4 right-4 w-96 max-h-96 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+            {/* Debug Panel Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800/50">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <h3 className="text-white font-semibold text-sm">Cart Debug Console</h3>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400 text-xs">{cartDebugLogs.length} logs</span>
+                <button
+                  onClick={() => setShowCartDebug(false)}
+                  className="text-gray-400 hover:text-white p-1 rounded"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Debug Logs */}
+            <div className="max-h-80 overflow-y-auto p-3 space-y-2">
+              {cartDebugLogs.map((log, index) => (
+                <div key={`${log.timestamp}-${index}`} className={`p-2 rounded-lg text-xs ${
+                  log.level === 'error' ? 'bg-red-900/30 text-red-200 border border-red-800/30' :
+                  log.level === 'success' ? 'bg-green-900/30 text-green-200 border border-green-800/30' :
+                  log.level === 'warning' ? 'bg-yellow-900/30 text-yellow-200 border border-yellow-800/30' :
+                  'bg-blue-900/20 text-blue-100 border border-blue-800/20'
+                }`}>
+                  <div className="flex items-start justify-between mb-1">
+                    <span className={`font-mono text-[10px] px-1 rounded ${
+                      log.level === 'error' ? 'bg-red-800/30 text-red-300' :
+                      log.level === 'success' ? 'bg-green-800/30 text-green-300' :
+                      log.level === 'warning' ? 'bg-yellow-800/30 text-yellow-300' :
+                      'bg-blue-800/30 text-blue-300'
+                    }`}>
+                      {log.level.toUpperCase()}
+                    </span>
+                    <span className="text-gray-500 text-[10px]">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className="mb-1 break-words">{log.message}</div>
+                  {log.data && (
+                    <div className="bg-gray-800/50 p-2 rounded text-[10px] font-mono overflow-x-auto">
+                      <pre className="whitespace-pre-wrap">{typeof log.data === 'object' ? JSON.stringify(log.data, null, 2) : String(log.data)}</pre>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Debug Actions */}
+            <div className="p-3 border-t border-gray-700 bg-gray-800/30 flex justify-between">
+              <button
+                onClick={() => setCartDebugLogs([])}
+                className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded"
+              >
+                Clear Logs
+              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    // Format logs for copying
+                    const formattedLogs = cartDebugLogs.map(log => {
+                      const timestamp = new Date(log.timestamp).toLocaleTimeString()
+                      const data = log.data ? `\n${typeof log.data === 'object' ? JSON.stringify(log.data, null, 2) : String(log.data)}` : ''
+                      return `[${timestamp}] ${log.level.toUpperCase()}: ${log.message}${data}`
+                    }).reverse().join('\n\n')
+                    
+                    // Copy to clipboard
+                    navigator.clipboard.writeText(formattedLogs).then(() => {
+                      // Show confirmation by briefly changing button text
+                      const button = event.target as HTMLButtonElement
+                      const originalText = button.textContent
+                      button.textContent = 'Copied!'
+                      button.className = button.className.replace('bg-green-700', 'bg-green-600')
+                      setTimeout(() => {
+                        button.textContent = originalText
+                        button.className = button.className.replace('bg-green-600', 'bg-green-700')
+                      }, 2000)
+                    }).catch(() => {
+                      // Fallback: log to console if clipboard fails
+                      console.log('=== CART DEBUG LOGS ===')
+                      console.log(formattedLogs)
+                      alert('Clipboard access failed. Logs exported to browser console.')
+                    })
+                  }}
+                  className="text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1 rounded"
+                >
+                  Copy All Logs
+                </button>
+                <button
+                  onClick={() => console.log('Cart Debug Logs:', cartDebugLogs)}
+                  className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                >
+                  Export to Console
                 </button>
               </div>
             </div>
