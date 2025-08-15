@@ -56,6 +56,27 @@ export function ComponentSearchModal({
     }
   }, [isOpen, componentType])
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY
+      
+      // Disable body scroll
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
+      
+      return () => {
+        // Re-enable body scroll and restore position
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        window.scrollTo(0, scrollY)
+      }
+    }
+  }, [isOpen])
+
   if (!isOpen || !componentType) {
     console.log('Modal not showing:', { isOpen, componentType })
     return null
@@ -78,8 +99,21 @@ export function ComponentSearchModal({
   const color = componentColors[componentType]
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end">
-      <div className="w-full bg-slate-950 rounded-t-3xl border-t border-slate-700/50 max-h-[90vh] overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end"
+      onClick={(e) => {
+        // Close modal when clicking backdrop
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
+      style={{ touchAction: 'none' }}
+    >
+      <div 
+        className="w-full bg-slate-950 rounded-t-3xl border-t border-slate-700/50 max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+        style={{ touchAction: 'auto' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
           <div>
@@ -142,8 +176,11 @@ export function ComponentSearchModal({
           </div>
         )}
 
-        {/* Products Grid */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Products Grid - Mobile Scroll Fix */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-6" style={{
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y'
+        }}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -152,11 +189,12 @@ export function ComponentSearchModal({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 pb-4">
               {products?.map((product) => (
                 <div
                   key={product.id}
                   className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-900/60 hover:border-slate-600/50 transition-all duration-200"
+                  style={{ touchAction: 'auto' }}
                 >
                   {/* Product Image */}
                   {product.featuredImage && (
