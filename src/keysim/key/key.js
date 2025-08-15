@@ -73,8 +73,8 @@ export class Key {
     console.log('🔧 Key created:', this.code, 'initial setup complete');
     // Initial color will be applied by the material system automatically
 
-    this.cap.castShadow = false;
-    this.cap.receiveShadow = false;
+    this.cap.castShadow = true;
+    this.cap.receiveShadow = true;
     this.cap.position.y = this.start_y;
     this.cap.position.x = this.x;
     this.cap.position.z = this.y;

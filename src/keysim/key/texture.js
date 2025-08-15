@@ -271,6 +271,10 @@ export const keyTexture = (opts) => {
   texture.flipY = false; // Don't flip texture since we're flipping the canvas drawing
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
+  // Use higher quality filtering
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
   
   console.log('🖼️ Created texture for key:', key, 'texture:', texture, 'canvas size:', canvas.width + 'x' + canvas.height);
   
@@ -310,6 +314,5 @@ export const keyTexture = (opts) => {
   //document.body.appendChild(canvas);
 
   texture.needsUpdate = true;
-  texture.minFilter = THREE.NearestMipmapNearestFilter;
   return texture;
 };

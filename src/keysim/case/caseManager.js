@@ -412,7 +412,7 @@ export default class CaseManager {
     
     // Create a simple, reliable material that won't become transparent
     let material = new THREE.MeshBasicMaterial({
-      color: color,
+          color: color,
       transparent: false,
       opacity: 1.0
     });

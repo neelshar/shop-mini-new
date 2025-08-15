@@ -24,7 +24,16 @@ export default class SceneManager extends Collection {
       alpha: true,
       logarithmicDepthBuffer: true,
       antialias: true,
+      powerPreference: "high-performance",
     });
+    // Enable shadow mapping for realistic shadows
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Enable tone mapping for HDR-like results
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+    // Enable physically correct lighting
+    this.renderer.physicallyCorrectLights = true;
     this.renderer.localClippingEnabled = true;
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.el.appendChild(this.renderer.domElement);
@@ -121,22 +130,53 @@ export default class SceneManager extends Collection {
     this.controls.target = new THREE.Vector3(0, 0, 0);
   }
   setupLights() {
-    let ambiant = new THREE.AmbientLight("#ffffff", 0.5);
+    // Create environment for reflections
+    const loader = new THREE.CubeTextureLoader();
+    const envTexture = loader.load([
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+    ]);
+    this.scene.environment = envTexture;
+    
+    // Reduce ambient light for more dramatic shadows
+    let ambiant = new THREE.AmbientLight("#ffffff", 0.3);
     this.scene.add(ambiant);
 
-    //main
-    let primaryLight = new THREE.DirectionalLight("#dddddd", 0.7);
-    primaryLight.position.set(5, 10, 10);
-    primaryLight.target.position.set(0, -10, -10);
+    // Main directional light with shadows
+    let primaryLight = new THREE.DirectionalLight("#ffffff", 1.2);
+    primaryLight.position.set(8, 12, 8);
+    primaryLight.target.position.set(0, 0, 0);
     primaryLight.target.updateMatrixWorld();
+    // Enable shadow casting
+    primaryLight.castShadow = true;
+    primaryLight.shadow.mapSize.width = 2048;
+    primaryLight.shadow.mapSize.height = 2048;
+    primaryLight.shadow.camera.near = 0.1;
+    primaryLight.shadow.camera.far = 50;
+    primaryLight.shadow.camera.left = -20;
+    primaryLight.shadow.camera.right = 20;
+    primaryLight.shadow.camera.top = 20;
+    primaryLight.shadow.camera.bottom = -20;
+    primaryLight.shadow.bias = -0.0005;
     this.scene.add(primaryLight, primaryLight.target);
 
-    //secondary shadows
-    let shadowLight = new THREE.DirectionalLight("#FFFFFF", 0.2);
-    shadowLight.position.set(-4, 3, -10);
-    shadowLight.target.position.set(0, 0, 0);
-    shadowLight.target.updateMatrixWorld();
-    this.scene.add(shadowLight, shadowLight.target);
+    // Fill light for softer shadows
+    let fillLight = new THREE.DirectionalLight("#7da3d9", 0.4);
+    fillLight.position.set(-6, 8, -4);
+    fillLight.target.position.set(0, 0, 0);
+    fillLight.target.updateMatrixWorld();
+    this.scene.add(fillLight, fillLight.target);
+
+    // Rim light for edge highlights
+    let rimLight = new THREE.DirectionalLight("#ffeaa7", 0.3);
+    rimLight.position.set(-8, 5, 12);
+    rimLight.target.position.set(0, 0, 0);
+    rimLight.target.updateMatrixWorld();
+    this.scene.add(rimLight, rimLight.target);
 
     //lighthelpers
     // let slh = new THREE.DirectionalLightHelper(shadowLight, 2);

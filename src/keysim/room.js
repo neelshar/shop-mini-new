@@ -42,6 +42,8 @@ export default class Room {
       desk_depth / 2 - 15,
       this.options.color
     );
+    // Enable shadow receiving on the desk
+    this.desk.receiveShadow = true;
 
     //add to scene
     this.options.scene.add(this.desk, this.wall, wallShadowPlane);

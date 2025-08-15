@@ -335,8 +335,71 @@ export function App() {
     return total > 0 ? total : 399
   }
 
-  // Reusable function to apply keycap color to 3D scene
-  const applyKeycapColorToScene = (color: string) => {
+  // Smart function to detect if keycap set is multi-color
+  const isMultiColorKeycapSet = (analysisResult: any) => {
+    if (!analysisResult) return false
+    
+    const { primary, modifier, accent } = analysisResult
+    
+    // Check if we have valid colors for all three categories
+    const hasValidPrimary = primary?.hex && primary?.confidence >= 6
+    const hasValidModifier = modifier?.hex && modifier?.confidence >= 6  
+    const hasValidAccent = accent?.hex && accent?.confidence >= 6
+    
+    if (!hasValidPrimary || !hasValidModifier || !hasValidAccent) {
+      console.log('🎯 Single-color detection: Missing valid colors for all categories')
+      return false
+    }
+    
+    // Calculate color difference between primary and modifier
+    const primaryColor = primary.hex
+    const modifierColor = modifier.hex
+    const accentColor = accent.hex
+    
+    // Convert hex to RGB for comparison
+    const hexToRgb = (hex: string) => {
+      const r = parseInt(hex.slice(1, 3), 16)
+      const g = parseInt(hex.slice(3, 5), 16) 
+      const b = parseInt(hex.slice(5, 7), 16)
+      return { r, g, b }
+    }
+    
+    const primaryRgb = hexToRgb(primaryColor)
+    const modifierRgb = hexToRgb(modifierColor)
+    const accentRgb = hexToRgb(accentColor)
+    
+    // Calculate color distance using Euclidean distance
+    const colorDistance = (c1: any, c2: any) => {
+      return Math.sqrt(
+        Math.pow(c1.r - c2.r, 2) + 
+        Math.pow(c1.g - c2.g, 2) + 
+        Math.pow(c1.b - c2.b, 2)
+      )
+    }
+    
+    const primaryModifierDistance = colorDistance(primaryRgb, modifierRgb)
+    const primaryAccentDistance = colorDistance(primaryRgb, accentRgb)
+    
+    // If colors are significantly different, it's a multi-color set
+    const MIN_COLOR_DIFFERENCE = 50 // Threshold for "significantly different"
+    const isMultiColor = primaryModifierDistance > MIN_COLOR_DIFFERENCE || 
+                        primaryAccentDistance > MIN_COLOR_DIFFERENCE
+    
+    console.log('🎯 Multi-color detection:', {
+      primaryColor,
+      modifierColor, 
+      accentColor,
+      primaryModifierDistance: Math.round(primaryModifierDistance),
+      primaryAccentDistance: Math.round(primaryAccentDistance),
+      threshold: MIN_COLOR_DIFFERENCE,
+      isMultiColor
+    })
+    
+    return isMultiColor
+  }
+
+  // Apply single color to all keycaps
+  const applySingleColorToScene = (color: string) => {
     if ((window as any).scene) {
       const scene = (window as any).scene
       let keysUpdated = 0
@@ -363,7 +426,7 @@ export function App() {
         }
       })
       
-      console.log(`✅ Updated ${keysUpdated} key objects with color ${color}`)
+      console.log(`🎨 Applied single keycap color ${color} to ${keysUpdated} keys`)
       
       // Force re-render
       if ((window as any).renderer && (window as any).camera) {
@@ -373,6 +436,111 @@ export function App() {
       }
     } else {
       console.error('❌ Scene not available!')
+    }
+  }
+
+  // Apply multi-color scheme to keycaps based on key types
+  const applyMultiColorToScene = (colors: {primary: string, modifier: string, accent: string}) => {
+    if (!(window as any).scene) {
+      console.error('❌ Scene not available!')
+      return
+    }
+    
+    const scene = (window as any).scene
+    let keysUpdated = 0
+    
+    // Define key categories based on QMK keycodes
+    const keyCategories = {
+      // Base keys (letters and numbers) - get primary color
+      base: [
+        'KC_A', 'KC_B', 'KC_C', 'KC_D', 'KC_E', 'KC_F', 'KC_G', 'KC_H', 'KC_I', 'KC_J', 
+        'KC_K', 'KC_L', 'KC_M', 'KC_N', 'KC_O', 'KC_P', 'KC_Q', 'KC_R', 'KC_S', 'KC_T', 
+        'KC_U', 'KC_V', 'KC_W', 'KC_X', 'KC_Y', 'KC_Z',
+        'KC_1', 'KC_2', 'KC_3', 'KC_4', 'KC_5', 'KC_6', 'KC_7', 'KC_8', 'KC_9', 'KC_0',
+        'KC_MINS', 'KC_EQL', 'KC_LBRC', 'KC_RBRC', 'KC_BSLS', 'KC_SCLN', 'KC_QUOT', 
+        'KC_GRV', 'KC_COMM', 'KC_DOT', 'KC_SLSH'
+      ],
+      
+      // Modifier keys - get modifier color
+      modifier: [
+        'KC_LSFT', 'KC_RSFT', 'KC_LCTL', 'KC_RCTL', 'KC_LALT', 'KC_RALT', 
+        'KC_LGUI', 'KC_RGUI', 'KC_SPC', 'KC_TAB', 'KC_BSPC', 'KC_CAPS',
+        'KC_F1', 'KC_F2', 'KC_F3', 'KC_F4', 'KC_F5', 'KC_F6', 'KC_F7', 'KC_F8', 
+        'KC_F9', 'KC_F10', 'KC_F11', 'KC_F12',
+        'KC_UP', 'KC_DOWN', 'KC_LEFT', 'KC_RGHT', 'KC_INS', 'KC_DEL', 
+        'KC_HOME', 'KC_END', 'KC_PGUP', 'KC_PGDN'
+      ],
+      
+      // Accent keys - get accent color  
+      accent: ['KC_ENT', 'KC_ESC', 'KC_GESC']
+    }
+    
+    scene.traverse((object: any) => {
+      if (object.material && object.type === 'Mesh') {
+        const isKey = object.name?.toLowerCase().includes('key') || 
+                     object.parent?.name?.toLowerCase().includes('key') ||
+                     object.userData?.isKey === true
+        
+        if (isKey && object.name) {
+          // Try to extract keycode from object name
+          const keyCode = object.name.match(/KC_[A-Z0-9_]+/)?.[0]
+          
+          if (keyCode) {
+            let targetColor = colors.primary // Default to primary
+            let keyType = 'base'
+            
+            // Determine which color this key should get
+            if (keyCategories.accent.includes(keyCode)) {
+              targetColor = colors.accent
+              keyType = 'accent'
+            } else if (keyCategories.modifier.includes(keyCode)) {
+              targetColor = colors.modifier
+              keyType = 'modifier'
+            }
+            
+            // Apply the color
+            if (Array.isArray(object.material)) {
+              object.material.forEach((mat: any) => {
+                mat.color.setHex(parseInt(targetColor.replace('#', '0x')))
+                mat.needsUpdate = true
+              })
+            } else {
+              object.material.color.setHex(parseInt(targetColor.replace('#', '0x')))
+              object.material.needsUpdate = true
+            }
+            
+            console.log(`🎨 Key ${keyCode}: Applied ${targetColor} (${keyType})`)
+            keysUpdated++
+          }
+        }
+      }
+    })
+    
+    console.log(`🎨 Applied multi-color scheme to ${keysUpdated} keys:`, colors)
+    
+    // Force re-render
+    if ((window as any).renderer && (window as any).camera) {
+      const renderer = (window as any).renderer
+      const camera = (window as any).camera
+      renderer.render(scene, camera)
+    }
+  }
+
+  // Smart function to apply keycap colors (single or multi-color)
+  const applyKeycapColorToScene = (color: string, analysisResult?: any) => {
+    if (analysisResult && isMultiColorKeycapSet(analysisResult)) {
+      // Multi-color keycap set - apply different colors to different key types
+      console.log('🌈 Detected multi-color keycap set - applying colorway')
+      const colors = {
+        primary: analysisResult.primary.hex,
+        modifier: analysisResult.modifier.hex,  
+        accent: analysisResult.accent.hex
+      }
+      applyMultiColorToScene(colors)
+    } else {
+      // Single-color keycap set - apply one color to all keys
+      console.log('🎨 Detected single-color keycap set - applying uniform color')
+      applySingleColorToScene(color)
     }
   }
 
@@ -480,19 +648,23 @@ export function App() {
       console.log('✅ AI keycap analysis completed:', analysisResult)
       setColorAnalysisResult(analysisResult)
       
-      // Extract primary color and apply to keycaps
-      if (analysisResult && analysisResult.primary && analysisResult.primary.hex) {
-        const primaryColor = analysisResult.primary.hex
-        console.log('🎨 Auto-applying primary color to keycaps:', primaryColor)
+      // Smart keycap color application - handles both single and multi-color sets
+      if (analysisResult && (analysisResult as any).primary && (analysisResult as any).primary.hex) {
+        const primaryColor = (analysisResult as any).primary.hex
+        console.log('🎨 Auto-applying keycap colors based on analysis:', analysisResult)
         
-        // Update React state
+        // Update React state with primary color (for UI display)
         setKeyboardConfig(prev => ({ ...prev, keycap_color: primaryColor }))
         
-        // Apply to 3D model using reusable function
-        applyKeycapColorToScene(primaryColor)
+        // Apply colors intelligently - pass full analysis result for multi-color detection
+        applyKeycapColorToScene(primaryColor, analysisResult)
         
-        // Show success message with color details
-        console.log(`🎨 Auto-applied keycap color: ${analysisResult.primary.name} (${primaryColor})`)
+        // Show success message
+        if (isMultiColorKeycapSet(analysisResult)) {
+          console.log(`🌈 Auto-applied multi-color keycap scheme: Primary: ${(analysisResult as any).primary.name}, Modifier: ${(analysisResult as any).modifier?.name}, Accent: ${(analysisResult as any).accent?.name}`)
+        } else {
+          console.log(`🎨 Auto-applied single-color keycap scheme: ${(analysisResult as any).primary.name} (${primaryColor})`)
+        }
       } else {
         console.log('⚠️ Keycap analysis complete but no primary color found in results')
       }
@@ -543,8 +715,8 @@ export function App() {
       
       console.log('🎨 Step 3: Applying colors to case...')
       // Extract primary color and apply to case
-      if (analysisResult && analysisResult.primary && analysisResult.primary.hex) {
-        const primaryColor = analysisResult.primary.hex
+      if (analysisResult && (analysisResult as any).primary && (analysisResult as any).primary.hex) {
+        const primaryColor = (analysisResult as any).primary.hex
         console.log('🏠 Auto-applying primary color to case:', primaryColor)
         
         console.log('🔄 Updating React state...')
@@ -556,7 +728,7 @@ export function App() {
         const success = applyCaseColorToScene(primaryColor)
         
         if (success) {
-          console.log(`✅ Auto-applied case color: ${analysisResult.primary.name} (${primaryColor})`)
+          console.log(`✅ Auto-applied case color: ${(analysisResult as any).primary.name} (${primaryColor})`)
         } else {
           console.log(`⚠️ Case color application may have failed`)
         }
@@ -592,7 +764,7 @@ export function App() {
 
   // Welcome/Landing Page with INSANE animations
   if (currentPage === 'welcome') {
-    return (
+  return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950 overflow-hidden">
         {/* Animated background particles */}
         <div className="absolute inset-0">
@@ -694,7 +866,7 @@ export function App() {
                   }`}>
                     Keyboards
                   </span>
-                </h1>
+      </h1>
               </div>
               
               <p className={`text-slate-400 text-lg font-light max-w-sm mx-auto leading-relaxed transform transition-all duration-1000 delay-700 ${
@@ -1064,6 +1236,22 @@ export function App() {
             />
           </div>
 
+          {/* Virtual Keyboard for Mobile Testing */}
+          <div className="mb-8">
+            <VirtualKeyboard 
+              onKeyPress={(key) => {
+                console.log('🎹 App received virtual key press:', key, 'Function available:', !!keyboardSoundFunction);
+                if (keyboardSoundFunction) {
+                  keyboardSoundFunction(key);
+                } else {
+                  console.log('❌ No keyboard sound function available');
+                }
+              }}
+              isAudioEnabled={isAudioEnabled}
+              className="shadow-lg"
+            />
+          </div>
+
           {/* Component Details */}
           <div className="space-y-4 mb-8 relative z-20">
             <div className="space-y-4">
@@ -1248,21 +1436,6 @@ export function App() {
             </div>
           </div>
 
-          {/* Virtual Keyboard for Mobile Testing */}
-          <div className="mb-8">
-            <VirtualKeyboard 
-              onKeyPress={(key) => {
-                console.log('🎹 App received virtual key press:', key, 'Function available:', !!keyboardSoundFunction);
-                if (keyboardSoundFunction) {
-                  keyboardSoundFunction(key);
-                } else {
-                  console.log('❌ No keyboard sound function available');
-                }
-              }}
-              isAudioEnabled={isAudioEnabled}
-              className="shadow-lg"
-            />
-          </div>
 
           {/* DEBUG: Auto Switch Analysis Results */}
           {debugMode && autoSwitchAnalysisResult && (
@@ -1600,12 +1773,12 @@ export function App() {
     ]
     
     const updateKeycapColor = (newColor: string) => {
-      console.log('🎨 Updating keycap color to:', newColor)
+      console.log('🎨 Manually updating keycap color to:', newColor)
       
       // Update React state
       setKeyboardConfig(prev => ({ ...prev, keycap_color: newColor }))
       
-      // Apply to 3D scene
+      // Apply to 3D scene - manual selection always uses single color (no analysis result)
       applyKeycapColorToScene(newColor)
     }
 
@@ -1725,7 +1898,7 @@ export function App() {
               View in 3D
             </button>
           </div>
-        </div>
+      </div>
     </div>
   )
 }
