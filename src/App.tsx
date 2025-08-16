@@ -21,7 +21,7 @@ interface KeyboardConfig {
   switch_color: string
 }
 
-type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer' | 'case-customizer'
+type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer' | 'case-customizer' | 'cart-confirmation'
 
 
 
@@ -37,8 +37,8 @@ export function App() {
     case: 'aluminum',
     plate: 'aluminum',
     stabilizers: 'durock',
-    case_color: '#eeeeee', // Clean white case like original KeySim
-    keycap_color: '#4a90e2', // Beautiful blue to match keycap textures
+    case_color: '#666666', // Gray case to match the gray keycaps
+    keycap_color: '#666666', // Gray keycaps as shown in the image
     switch_color: '#ffa726' // Default tactile orange
   })
   const [isLoaded, setIsLoaded] = useState(false)
@@ -59,6 +59,10 @@ export function App() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [isBuying, setIsBuying] = useState(false)
+  const [cartConfirmationData, setCartConfirmationData] = useState<{
+    items: Array<{name: string, price: number}>,
+    total: number
+  } | null>(null)
 
   // Color analysis state
   const [colorAnalysisResult, setColorAnalysisResult] = useState<any>(null)
@@ -69,25 +73,9 @@ export function App() {
   const [autoSwitchAnalysisResult, setAutoSwitchAnalysisResult] = useState<any>(null)
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false) // Start with audio muted
   
-  // Cart Debug Panel State
-  const [cartDebugLogs, setCartDebugLogs] = useState<Array<{
-    timestamp: number,
-    level: 'info' | 'error' | 'success' | 'warning',
-    message: string,
-    data?: any
-  }>>([])
-  const [showCartDebug, setShowCartDebug] = useState(false)
-  
-  // Cart Debug Logger
-  const addCartDebugLog = (level: 'info' | 'error' | 'success' | 'warning', message: string, data?: any) => {
-    const logEntry = {
-      timestamp: Date.now(),
-      level,
-      message,
-      data
-    }
-    setCartDebugLogs(prev => [logEntry, ...prev.slice(0, 49)]) // Keep last 50 logs
-    console.log(`🛒 [${level.toUpperCase()}] ${message}`, data || '')
+  // Simple logging function for development
+  const logCartAction = (message: string, data?: any) => {
+    console.log(`🛒 ${message}`, data || '')
   }
 
   // Case color options - used in both customizer and case-customizer
@@ -352,14 +340,11 @@ export function App() {
     if (isAddingToCart) return // Prevent double-clicks
     
     setIsAddingToCart(true)
-    setCartDebugLogs([]) // Clear previous logs
-    setShowCartDebug(true) // Show debug panel
     
     try {
-      addCartDebugLog('info', '========== CART DEBUG START ==========')
-      addCartDebugLog('info', 'Starting add to cart process...')
-      addCartDebugLog('info', 'Selected products:', selectedProducts)
-      addCartDebugLog('info', 'Hook functions available:', { 
+      logCartAction('Starting add to cart process...')
+      logCartAction('Selected products:', selectedProducts)
+      logCartAction('Hook functions available:', { 
         addToCart: typeof addToCart, 
         buyProduct: typeof buyProduct 
       })
@@ -370,8 +355,7 @@ export function App() {
       // Add keycaps to cart
       if (selectedProducts.keycaps) {
         const keycapsProduct = selectedProducts.keycaps
-        addCartDebugLog('info', '========== KEYCAPS DEBUG ==========')
-        addCartDebugLog('info', 'Full keycaps product:', keycapsProduct)
+        logCartAction('Processing keycaps product...', keycapsProduct)
         
         const productId = keycapsProduct.id
         // Get variant ID from defaultVariantId or first variant, NOT product ID
@@ -379,7 +363,7 @@ export function App() {
                          keycapsProduct.variants?.[0]?.id || 
                          null // Don't fallback to product ID
         
-        addCartDebugLog('info', 'Keycaps extracted IDs:', { 
+        logCartAction( { 
           productId, 
           variantId,
           productIdType: typeof productId,
@@ -391,11 +375,11 @@ export function App() {
         
         // Validate IDs
         if (!productId) {
-          addCartDebugLog('error', 'Keycaps product ID is missing or invalid')
+          logCartAction( 'Keycaps product ID is missing or invalid')
           throw new Error('Keycaps product ID is missing or invalid')
         }
         if (!variantId) {
-          addCartDebugLog('error', 'Keycaps variant ID is missing or invalid')
+          logCartAction( 'Keycaps variant ID is missing or invalid')
           throw new Error('Keycaps variant ID is missing or invalid')
         }
         
@@ -405,12 +389,12 @@ export function App() {
           quantity: 1,
         }
         
-        addCartDebugLog('info', 'Keycaps cart params:', keycapsCartParams)
+        logCartAction( keycapsCartParams)
         debugInfo.push({ type: 'keycaps', params: keycapsCartParams })
         
         cartPromises.push(
           addToCart(keycapsCartParams).catch(error => {
-            addCartDebugLog('error', 'Keycaps cart error:', error)
+            logCartAction( error)
             throw new Error(`Keycaps add to cart failed: ${error.message}`)
           })
         )
@@ -419,8 +403,8 @@ export function App() {
       // Add switches to cart
       if (selectedProducts.switches) {
         const switchesProduct = selectedProducts.switches
-        addCartDebugLog('info', '========== SWITCHES DEBUG ==========')
-        addCartDebugLog('info', 'Full switches product:', switchesProduct)
+        logCartAction( '========== SWITCHES DEBUG ==========')
+        logCartAction( switchesProduct)
         
         const productId = switchesProduct.id
         // Get variant ID from defaultVariantId or first variant, NOT product ID
@@ -428,7 +412,7 @@ export function App() {
                          switchesProduct.variants?.[0]?.id || 
                          null // Don't fallback to product ID
         
-        addCartDebugLog('info', 'Switches extracted IDs:', { 
+        logCartAction( { 
           productId, 
           variantId,
           productIdType: typeof productId,
@@ -440,11 +424,11 @@ export function App() {
         
         // Validate IDs
         if (!productId) {
-          addCartDebugLog('error', 'Switches product ID is missing or invalid')
+          logCartAction( 'Switches product ID is missing or invalid')
           throw new Error('Switches product ID is missing or invalid')
         }
         if (!variantId) {
-          addCartDebugLog('error', 'Switches variant ID is missing or invalid')
+          logCartAction( 'Switches variant ID is missing or invalid')
           throw new Error('Switches variant ID is missing or invalid')
         }
         
@@ -454,12 +438,12 @@ export function App() {
           quantity: 1,
         }
         
-        addCartDebugLog('info', 'Switches cart params:', switchesCartParams)
+        logCartAction( switchesCartParams)
         debugInfo.push({ type: 'switches', params: switchesCartParams })
         
         cartPromises.push(
           addToCart(switchesCartParams).catch(error => {
-            addCartDebugLog('error', 'Switches cart error:', error)
+            logCartAction( error)
             throw new Error(`Switches add to cart failed: ${error.message}`)
           })
         )
@@ -468,8 +452,8 @@ export function App() {
       // Add case to cart
       if (selectedProducts.case) {
         const caseProduct = selectedProducts.case
-        addCartDebugLog('info', '========== CASE DEBUG ==========')
-        addCartDebugLog('info', 'Full case product:', caseProduct)
+        logCartAction( '========== CASE DEBUG ==========')
+        logCartAction( caseProduct)
         
         const productId = caseProduct.id
         // Get variant ID from defaultVariantId or first variant, NOT product ID
@@ -477,7 +461,7 @@ export function App() {
                          caseProduct.variants?.[0]?.id || 
                          null // Don't fallback to product ID
         
-        addCartDebugLog('info', 'Case extracted IDs:', { 
+        logCartAction( { 
           productId, 
           variantId,
           productIdType: typeof productId,
@@ -489,11 +473,11 @@ export function App() {
         
         // Validate IDs
         if (!productId) {
-          addCartDebugLog('error', 'Case product ID is missing or invalid')
+          logCartAction( 'Case product ID is missing or invalid')
           throw new Error('Case product ID is missing or invalid')
         }
         if (!variantId) {
-          addCartDebugLog('error', 'Case variant ID is missing or invalid')
+          logCartAction( 'Case variant ID is missing or invalid')
           throw new Error('Case variant ID is missing or invalid')
         }
         
@@ -503,25 +487,25 @@ export function App() {
           quantity: 1,
         }
         
-        addCartDebugLog('info', 'Case cart params:', caseCartParams)
+        logCartAction( caseCartParams)
         debugInfo.push({ type: 'case', params: caseCartParams })
         
         cartPromises.push(
           addToCart(caseCartParams).catch(error => {
-            addCartDebugLog('error', 'Case cart error:', error)
+            logCartAction( error)
             throw new Error(`Case add to cart failed: ${error.message}`)
           })
         )
       }
       
-      addCartDebugLog('info', '========== EXECUTING CART OPERATIONS ==========')
-      addCartDebugLog('info', 'Cart promises count:', cartPromises.length)
-      addCartDebugLog('info', 'Debug info summary:', debugInfo)
+      logCartAction( '========== EXECUTING CART OPERATIONS ==========')
+      logCartAction( cartPromises.length)
+      logCartAction( debugInfo)
       
       // Execute all cart additions
       const results = await Promise.allSettled(cartPromises)
       
-      addCartDebugLog('info', '========== CART RESULTS ==========')
+      logCartAction( '========== CART RESULTS ==========')
       results.forEach((result, index) => {
         const resultData = {
           status: result.status,
@@ -529,48 +513,55 @@ export function App() {
           reason: result.status === 'rejected' ? result.reason : undefined,
           debugInfo: debugInfo[index]
         }
-        addCartDebugLog(result.status === 'fulfilled' ? 'success' : 'error', `Result ${index + 1}:`, resultData)
+        logCartAction( resultData)
       })
       
       // Check if any failed
       const failures = results.filter(r => r.status === 'rejected')
       if (failures.length > 0) {
-        addCartDebugLog('error', 'Some items failed to add to cart:', failures)
+        logCartAction( failures)
         throw new Error(`${failures.length} items failed to add to cart`)
       }
       
-      addCartDebugLog('success', 'Successfully added all items to cart!')
+      console.log('✅ Successfully added all items to cart!')
       
-      // Optional: Show success message or close cart modal
+      // Prepare confirmation data
+      const confirmationItems = []
+      if (selectedProducts.keycaps) {
+        confirmationItems.push({
+          name: `${selectedProducts.keycaps.title} - Keycaps`,
+          price: selectedProducts.keycaps.priceRange?.minVariantPrice?.amount || 149
+        })
+      }
+      if (selectedProducts.switches) {
+        confirmationItems.push({
+          name: `${selectedProducts.switches.title} - Switches`,
+          price: selectedProducts.switches.priceRange?.minVariantPrice?.amount || 129
+        })
+      }
+      if (selectedProducts.case) {
+        confirmationItems.push({
+          name: `${selectedProducts.case.title} - Case`,
+          price: selectedProducts.case.priceRange?.minVariantPrice?.amount || 199
+        })
+      }
+      
+      setCartConfirmationData({
+        items: confirmationItems,
+        total: calculateCartTotal()
+      })
+      
+      // Navigate to confirmation page
+      setCurrentPage('cart-confirmation')
       setIsCartOpen(false)
       
     } catch (error) {
-      addCartDebugLog('error', '========== CART ERROR ==========')
-      addCartDebugLog('error', 'Error adding items to cart:', error)
-      addCartDebugLog('error', 'Error details:', {
-        name: error?.name,
-        message: error?.message,
-        stack: error?.stack,
-        constructor: error?.constructor?.name,
-        fullError: error
-      })
-      addCartDebugLog('error', 'Selected products at error:', selectedProducts)
-      addCartDebugLog('error', 'Hook functions at error:', { 
-        addToCart: typeof addToCart, 
-        buyProduct: typeof buyProduct 
-      })
+      logCartAction('Cart error occurred:', error)
       
-      // More detailed error message
-      let errorMessage = 'Failed to add items to cart. '
-      if (error?.message) {
-        errorMessage += `Error: ${error.message}. `
-      }
-      errorMessage += 'Check console for detailed debugging information.'
-      
-      alert(errorMessage)
+      // Show user-friendly error message
+      alert('Failed to add items to cart. Please try again or contact support if the issue persists.')
     } finally {
       setIsAddingToCart(false)
-      addCartDebugLog('info', '========== CART DEBUG END ==========')
     }
   }
 
@@ -1921,7 +1912,7 @@ export function App() {
           isAudioEnabled={isAudioEnabled}
           hasSelectedSwitch={hasSelectedSwitch}
           currentSwitchName={getCurrentSwitchName()}
-          className="hidden"
+          className=""
         />
 
         {/* Simple Cart Summary Modal */}
@@ -2066,110 +2057,6 @@ export function App() {
           </div>
         )}
 
-        {/* Cart Debug Panel - Visible in UI */}
-        {showCartDebug && cartDebugLogs.length > 0 && (
-          <div className="fixed bottom-4 right-4 w-96 max-h-96 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
-            {/* Debug Panel Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800/50">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                <h3 className="text-white font-semibold text-sm">Cart Debug Console</h3>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-400 text-xs">{cartDebugLogs.length} logs</span>
-                <button
-                  onClick={() => setShowCartDebug(false)}
-                  className="text-gray-400 hover:text-white p-1 rounded"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Debug Logs */}
-            <div className="max-h-80 overflow-y-auto p-3 space-y-2">
-              {cartDebugLogs.map((log, index) => (
-                <div key={`${log.timestamp}-${index}`} className={`p-2 rounded-lg text-xs ${
-                  log.level === 'error' ? 'bg-red-900/30 text-red-200 border border-red-800/30' :
-                  log.level === 'success' ? 'bg-green-900/30 text-green-200 border border-green-800/30' :
-                  log.level === 'warning' ? 'bg-yellow-900/30 text-yellow-200 border border-yellow-800/30' :
-                  'bg-blue-900/20 text-blue-100 border border-blue-800/20'
-                }`}>
-                  <div className="flex items-start justify-between mb-1">
-                    <span className={`font-mono text-[10px] px-1 rounded ${
-                      log.level === 'error' ? 'bg-red-800/30 text-red-300' :
-                      log.level === 'success' ? 'bg-green-800/30 text-green-300' :
-                      log.level === 'warning' ? 'bg-yellow-800/30 text-yellow-300' :
-                      'bg-blue-800/30 text-blue-300'
-                    }`}>
-                      {log.level.toUpperCase()}
-                    </span>
-                    <span className="text-gray-500 text-[10px]">
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <div className="mb-1 break-words">{log.message}</div>
-                  {log.data && (
-                    <div className="bg-gray-800/50 p-2 rounded text-[10px] font-mono overflow-x-auto">
-                      <pre className="whitespace-pre-wrap">{typeof log.data === 'object' ? JSON.stringify(log.data, null, 2) : String(log.data)}</pre>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Debug Actions */}
-            <div className="p-3 border-t border-gray-700 bg-gray-800/30 flex justify-between">
-              <button
-                onClick={() => setCartDebugLogs([])}
-                className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded"
-              >
-                Clear Logs
-              </button>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => {
-                    // Format logs for copying
-                    const formattedLogs = cartDebugLogs.map(log => {
-                      const timestamp = new Date(log.timestamp).toLocaleTimeString()
-                      const data = log.data ? `\n${typeof log.data === 'object' ? JSON.stringify(log.data, null, 2) : String(log.data)}` : ''
-                      return `[${timestamp}] ${log.level.toUpperCase()}: ${log.message}${data}`
-                    }).reverse().join('\n\n')
-                    
-                    // Copy to clipboard
-                    navigator.clipboard.writeText(formattedLogs).then(() => {
-                      // Show confirmation by briefly changing button text
-                      const button = event.target as HTMLButtonElement
-                      const originalText = button.textContent
-                      button.textContent = 'Copied!'
-                      button.className = button.className.replace('bg-green-700', 'bg-green-600')
-                      setTimeout(() => {
-                        button.textContent = originalText
-                        button.className = button.className.replace('bg-green-600', 'bg-green-700')
-                      }, 2000)
-                    }).catch(() => {
-                      // Fallback: log to console if clipboard fails
-                      console.log('=== CART DEBUG LOGS ===')
-                      console.log(formattedLogs)
-                      alert('Clipboard access failed. Logs exported to browser console.')
-                    })
-                  }}
-                  className="text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  Copy All Logs
-                </button>
-                <button
-                  onClick={() => console.log('Cart Debug Logs:', cartDebugLogs)}
-                  className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded"
-                >
-                  Export to Console
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     )
   }
@@ -2445,6 +2332,74 @@ export function App() {
             >
               Apply & View in 3D
             </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Cart Confirmation Page
+  if (currentPage === 'cart-confirmation') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950 p-4">
+        <div className="max-w-md mx-auto pt-12">
+          {/* Success Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">Added to Cart!</h1>
+            <p className="text-slate-400">Your custom keyboard components have been added to your cart.</p>
+          </div>
+
+          {/* Cart Summary */}
+          {cartConfirmationData && (
+            <div className="bg-slate-900/50 rounded-2xl border border-slate-700/50 p-6 mb-6">
+              <h3 className="text-white font-semibold mb-4">Cart Summary</h3>
+              <div className="space-y-3">
+                {cartConfirmationData.items.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span className="text-slate-300 text-sm">{item.name}</span>
+                    <span className="text-white font-medium">${item.price}</span>
+                  </div>
+                ))}
+                <div className="pt-3 border-t border-slate-700">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white font-semibold">Total</span>
+                    <span className="text-green-400 font-bold text-lg">${cartConfirmationData.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                // Navigate to Shopify cart page
+                window.location.href = '/cart'
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-green-600/25 active:scale-95"
+            >
+              Proceed to Checkout
+            </button>
+            
+            <button
+              onClick={() => setCurrentPage('builder')}
+              className="w-full bg-slate-800/60 hover:bg-slate-800/80 border border-slate-700/50 text-slate-300 font-medium py-3 px-6 rounded-xl transition-all duration-200"
+            >
+              Continue Building
+            </button>
+          </div>
+
+          {/* Additional Info */}
+          <div className="mt-8 text-center">
+            <p className="text-slate-500 text-sm">
+              You can modify quantities and review your full order in the checkout page.
+            </p>
           </div>
         </div>
       </div>

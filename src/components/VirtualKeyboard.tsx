@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface VirtualKeyboardProps {
   onKeyPress: (key: string) => void;
@@ -16,9 +16,98 @@ export function VirtualKeyboard({ onKeyPress, isAudioEnabled, className = '' }: 
     setPressedKey(key);
     onKeyPress(key);
     
+    // Convert character to browser key code for 3D animation
+    const keyCode = charToBrowserKeyCode(key);
+    if (keyCode) {
+      // Dispatch synthetic keydown event for 3D KeySim only (mark as synthetic to avoid sound duplication)
+      const keydownEvent = new KeyboardEvent('keydown', {
+        code: keyCode,
+        key: key,
+        bubbles: true
+      });
+      // Mark as synthetic to prevent sound system from processing it
+      (keydownEvent as any).isSynthetic = true;
+      document.dispatchEvent(keydownEvent);
+      
+      // Dispatch keyup event after a short delay to complete the animation
+      setTimeout(() => {
+        const keyupEvent = new KeyboardEvent('keyup', {
+          code: keyCode,
+          key: key,
+          bubbles: true
+        });
+        // Mark as synthetic to prevent sound system from processing it
+        (keyupEvent as any).isSynthetic = true;
+        document.dispatchEvent(keyupEvent);
+      }, 100);
+    }
+    
     // Clear pressed state after animation
     setTimeout(() => setPressedKey(null), 150);
   };
+
+  // Helper function to convert character to browser key code
+  const charToBrowserKeyCode = (char: string): string | null => {
+    if (char === ' ') return 'Space';
+    if (char.length === 1 && char.match(/[a-zA-Z]/)) {
+      return `Key${char.toUpperCase()}`;
+    }
+    return null;
+  };
+
+  // Helper function to convert browser key code to virtual keyboard character
+  const browserKeyCodeToChar = (code: string): string | null => {
+    if (code === 'Space') return ' ';
+    if (code.startsWith('Key') && code.length === 4) {
+      const char = code.substring(3).toLowerCase();
+      // Check if this character exists in our virtual keyboard layout
+      const allKeys = [...keys.row1, ...keys.row2, ...keys.row3];
+      if (allKeys.includes(char)) {
+        return char.toUpperCase();
+      }
+    }
+    return null;
+  };
+
+  const keys = {
+    row1: ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+    row2: ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+    row3: ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+  };
+
+  // Listen for physical keyboard events to sync with virtual keyboard visual feedback
+  useEffect(() => {
+    if (!isAudioEnabled) return;
+
+    const handlePhysicalKeyDown = (event: KeyboardEvent) => {
+      const char = browserKeyCodeToChar(event.code);
+      if (char) {
+        console.log('👀 VirtualKeyboard: Physical key pressed, syncing visual:', event.code, '→', char);
+        setPressedKey(char);
+        // Don't interfere with sound system - this is visual only
+      }
+    };
+
+    const handlePhysicalKeyUp = (event: KeyboardEvent) => {
+      const char = browserKeyCodeToChar(event.code);
+      if (char) {
+        console.log('👀 VirtualKeyboard: Physical key released, clearing visual:', event.code, '→', char);
+        // Clear the pressed state after a brief moment to show the press
+        setTimeout(() => setPressedKey(null), 50);
+        // Don't interfere with sound system - this is visual only
+      }
+    };
+
+    // Add event listeners with capture: true and passive: true to avoid interfering with sound system
+    document.addEventListener('keydown', handlePhysicalKeyDown, { capture: true, passive: true });
+    document.addEventListener('keyup', handlePhysicalKeyUp, { capture: true, passive: true });
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handlePhysicalKeyDown, { capture: true, passive: true });
+      document.removeEventListener('keyup', handlePhysicalKeyUp, { capture: true, passive: true });
+    };
+  }, [isAudioEnabled]);
 
   const getKeyClass = (key: string) => {
     const isPressed = pressedKey === key;
@@ -56,12 +145,6 @@ export function VirtualKeyboard({ onKeyPress, isAudioEnabled, className = '' }: 
     `.replace(/\s+/g, ' ').trim();
   };
 
-  const keys = {
-    row1: ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-    row2: ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-    row3: ['z', 'x', 'c', 'v', 'b', 'n', 'm']
-  };
-
   if (!isAudioEnabled) {
     return (
       <div className={`p-6 bg-slate-900/50 rounded-2xl border border-slate-700/50 ${className}`}>
@@ -81,7 +164,7 @@ export function VirtualKeyboard({ onKeyPress, isAudioEnabled, className = '' }: 
       <div className="text-center mb-6">
         <h3 className="text-white text-lg font-bold mb-1">Virtual Keyboard</h3>
         <p className="text-slate-400 text-sm">
-          Tap keys to test keyboard sounds • Perfect for mobile devices
+          Tap keys to test sounds • Syncs with your physical keyboard
         </p>
       </div>
 

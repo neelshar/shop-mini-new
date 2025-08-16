@@ -205,11 +205,23 @@ export function MultiProfileKeyboardSounds({
     }
   }, [audioInitialized]);
 
-  // Add global keyboard event listener - always active, but only responds when audio is initialized
+  // Add global keyboard event listener - always active, responds when audio is enabled
   useEffect(() => {
     const handleGlobalKeyPress = (event: KeyboardEvent) => {
       
-      console.log(`🌍 Global key detected [${instanceId.current}]:`, { key: event.key, code: event.code, audioInitialized });
+      // Skip synthetic events from virtual keyboard to avoid double sound
+      if ((event as any).isSynthetic) {
+        console.log('🔇 Ignoring synthetic event from virtual keyboard:', event.code);
+        return;
+      }
+      
+      console.log(`🌍 Global key detected [${instanceId.current}]:`, { 
+        key: event.key, 
+        code: event.code, 
+        audioInitialized, 
+        audioMuted,
+        externalAudioEnabled 
+      });
       
       // Add to visual debug log (keep last 10 keys)
       setKeyPressLog(prev => {
@@ -218,18 +230,37 @@ export function MultiProfileKeyboardSounds({
         return updated;
       });
       
-      if (!audioInitialized) {
-        console.log('❌ Audio not initialized, ignoring key');
+      // Check if audio is disabled (either not initialized OR muted)
+      if (!audioInitialized && !externalAudioEnabled) {
+        console.log('❌ Audio not enabled, ignoring key');
         return;
       }
       
-      const { key, code } = event;
+      // Force initialization if audio should be enabled but isn't initialized
+      if (externalAudioEnabled && !audioInitialized) {
+        console.log('🔧 Force initializing audio due to physical key press...');
+        initializeAudio().then(() => {
+          console.log('✅ Audio force-initialized, playing sound...');
+          handleKeySound(event.key, event.code);
+        });
+        return;
+      }
       
+      // If initialized but muted, skip
+      if (audioMuted) {
+        console.log('🔇 Audio is muted, ignoring key');
+        return;
+      }
+      
+      handleKeySound(event.key, event.code);
+    };
+
+    const handleKeySound = (key: string, code: string) => {
       console.log(`🔍 Processing key event: key="${key}", code="${code}"`);
       addDebugLog(`🔍 Processing key: ${key} (${code})`);
       
       if (code === 'Space') {
-        event.preventDefault();
+        // Don't prevent default for Space to avoid interfering with other components
         console.log('🎵 Playing sound for Space');
         addDebugLog('🎵 Calling playKeyboardSound(Space)');
         playKeyboardSound('Space');
@@ -242,7 +273,7 @@ export function MultiProfileKeyboardSounds({
         addDebugLog('🎵 Calling playKeyboardSound(Backspace)');
         playKeyboardSound('Backspace');
       } else if (code === 'Tab') {
-        event.preventDefault();
+        // Don't prevent default for Tab to avoid interfering with other components
         console.log('🎵 Playing sound for Tab');
         addDebugLog('🎵 Calling playKeyboardSound(Tab)');
         playKeyboardSound('Tab');
@@ -275,7 +306,7 @@ export function MultiProfileKeyboardSounds({
       console.log(`🎹 Removing global keyboard listener [${instanceId.current}] (component unmount)`);
       document.removeEventListener('keydown', handleGlobalKeyPress);
     };
-  }, [audioInitialized, selectedProfile]); // IMPORTANT: Include selectedProfile so handler updates with profile changes
+  }, [audioInitialized, audioMuted, externalAudioEnabled, selectedProfile]); // Include all relevant state
 
   // Function to get consistent sound index for a key
   const getSoundIndexForKey = (key: string): number => {
