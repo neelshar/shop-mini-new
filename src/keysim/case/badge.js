@@ -1,7 +1,18 @@
 import * as THREE from "../three-compat";
 import { TextureLoader } from "three/src/loaders/TextureLoader.js";
-import roughnessMapPath from "../../keysim-assets/dist/lightgold_roughness-512.png";
-import albedoMapPath from "../../keysim-assets/dist/lightgold_albedo-512.png";
+
+// CDN-based texture paths
+const CDN_BASE = typeof window !== 'undefined' && window.location 
+  ? (import.meta?.env?.VITE_CDN_BASE_URL || '') 
+  : '';
+
+const getTexturePath = (path) => {
+  const cleanPath = path.replace('../../keysim-assets/', '');
+  return CDN_BASE ? `${CDN_BASE}/textures/keysim-assets/${cleanPath}` : `/keysim-assets/${cleanPath}`;
+};
+
+const roughnessMapPath = getTexturePath('dist/lightgold_roughness-512.png');
+const albedoMapPath = getTexturePath('dist/lightgold_albedo-512.png');
 
 export default (w, cm) => {
   let cornerRadius = 0.02;

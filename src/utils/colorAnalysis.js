@@ -9,10 +9,11 @@ export class ColorAnalysisSystem {
     this.model = 'gpt-4o'; // Updated to current model with vision capabilities
     
     console.log('🔧 ColorAnalysisSystem Debug:');
-    console.log('  - Environment variables:', import.meta.env);
+    console.log('  - All Environment variables:', import.meta.env);
+    console.log('  - VITE_OPENAI_API_KEY:', import.meta.env.VITE_OPENAI_API_KEY ? 'Found' : 'Missing');
     console.log('  - API Key found:', !!this.apiKey);
     console.log('  - API Key length:', this.apiKey?.length || 0);
-    console.log('  - API Key prefix:', this.apiKey?.substring(0, 7) || 'none');
+    console.log('  - API Key prefix:', this.apiKey?.substring(0, 10) || 'none');
     
     if (!this.apiKey) {
       console.error('❌ OpenAI API key not found in environment variables. Please set VITE_OPENAI_API_KEY in your .env file.');

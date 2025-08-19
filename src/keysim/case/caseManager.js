@@ -10,33 +10,44 @@ import { lightTexture } from "./lightTexture";
 import initial_settings from "../initial_settings";
 
 import { TextureLoader } from "three/src/loaders/TextureLoader.js";
-import shadowPath from "../../keysim-assets/dist/shadow-key-noise.png";
-import noisePath from "../../keysim-assets/dist/noise.png";
-import brushedRoughness from "../../keysim-assets/dist/brushed-metal_roughness-512.png";
-import brushedAlbedo from "../../keysim-assets/dist/brushed-metal_albedo-512.png";
-import brushedAo from "../../keysim-assets/dist/brushed-metal_ao-512.png";
 
-import shadow_path_100 from "../../keysim-assets/shadows/100.png";
-import shadow_path_40 from "../../keysim-assets/shadows/40.png";
-import shadow_path_60 from "../../keysim-assets/shadows/60.png";
-import shadow_path_60hhkb from "../../keysim-assets/shadows/60hhkb.png";
-import shadow_path_60iso from "../../keysim-assets/shadows/60iso.png";
-import shadow_path_60wkl from "../../keysim-assets/shadows/60wkl.png";
-import shadow_path_65 from "../../keysim-assets/shadows/65.png";
-import shadow_path_75 from "../../keysim-assets/shadows/75.png";
-import shadow_path_80 from "../../keysim-assets/shadows/80.png";
-import shadow_path_95 from "../../keysim-assets/shadows/95.png";
-import shadow_path_leftnum from "../../keysim-assets/shadows/leftnum.png";
-import shadow_path_numpad from "../../keysim-assets/shadows/numpad.png";
-import shadow_path_40ortho from "../../keysim-assets/shadows/40ortho.png";
-import shadow_path_50ortho from "../../keysim-assets/shadows/50ortho.png";
+// CDN-based texture paths
+const CDN_BASE = typeof window !== 'undefined' && window.location 
+  ? (import.meta?.env?.VITE_CDN_BASE_URL || '') 
+  : '';
 
-import nx from "../../keysim-assets/dist/nx.jpg";
-import ny from "../../keysim-assets/dist/ny.jpg";
-import nz from "../../keysim-assets/dist/nz.jpg";
-import px from "../../keysim-assets/dist/px.jpg";
-import py from "../../keysim-assets/dist/py.jpg";
-import pz from "../../keysim-assets/dist/pz.jpg";
+const getTexturePath = (path) => {
+  const cleanPath = path.replace('../../keysim-assets/', '');
+  return CDN_BASE ? `${CDN_BASE}/textures/keysim-assets/${cleanPath}` : `/keysim-assets/${cleanPath}`;
+};
+
+const shadowPath = getTexturePath('dist/shadow-key-noise.png');
+const noisePath = getTexturePath('dist/noise.png');
+const brushedRoughness = getTexturePath('dist/brushed-metal_roughness-512.png');
+const brushedAlbedo = getTexturePath('dist/brushed-metal_albedo-512.png');
+const brushedAo = getTexturePath('dist/brushed-metal_ao-512.png');
+
+const shadow_path_100 = getTexturePath('shadows/100.png');
+const shadow_path_40 = getTexturePath('shadows/40.png');
+const shadow_path_60 = getTexturePath('shadows/60.png');
+const shadow_path_60hhkb = getTexturePath('shadows/60hhkb.png');
+const shadow_path_60iso = getTexturePath('shadows/60iso.png');
+const shadow_path_60wkl = getTexturePath('shadows/60wkl.png');
+const shadow_path_65 = getTexturePath('shadows/65.png');
+const shadow_path_75 = getTexturePath('shadows/75.png');
+const shadow_path_80 = getTexturePath('shadows/80.png');
+const shadow_path_95 = getTexturePath('shadows/95.png');
+const shadow_path_leftnum = getTexturePath('shadows/leftnum.png');
+const shadow_path_numpad = getTexturePath('shadows/numpad.png');
+const shadow_path_40ortho = getTexturePath('shadows/40ortho.png');
+const shadow_path_50ortho = getTexturePath('shadows/50ortho.png');
+
+const nx = getTexturePath('dist/nx.jpg');
+const ny = getTexturePath('dist/ny.jpg');
+const nz = getTexturePath('dist/nz.jpg');
+const px = getTexturePath('dist/px.jpg');
+const py = getTexturePath('dist/py.jpg');
+const pz = getTexturePath('dist/pz.jpg');
 
 const shadow_paths = {
   shadow_path_100,

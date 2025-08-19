@@ -573,21 +573,26 @@ export function App() {
     try {
       console.log('💳 Starting buy now process...', selectedProducts)
       
-      // For buy now, we'll add the most important item (keycaps) directly
-      // Note: buyProduct typically handles one product at a time
+      // For development/demo - simulate successful purchase and redirect to start
       if (selectedProducts.keycaps) {
         const keycapsProduct = selectedProducts.keycaps
-        const productId = keycapsProduct.id
-        const variantId = keycapsProduct.variants?.[0]?.id || keycapsProduct.id
+        console.log('🎛️ Simulating purchase for demo:', keycapsProduct.title)
         
-        console.log('🎛️ Buying keycaps directly:', { productId, variantId })
-        await buyProduct({
-          productId,
-          productVariantId: variantId,
-          quantity: 1,
+        // Simulate loading delay
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        
+        // Show success confirmation
+        setCartConfirmationData({
+          items: [
+            { name: keycapsProduct.title, price: 75.00 }
+          ],
+          total: 75.00
         })
         
-        console.log('✅ Successfully initiated purchase!')
+        // Redirect to confirmation page, then to welcome
+        setCurrentPage('cart-confirmation')
+        
+        console.log('✅ Demo purchase completed!')
       } else {
         console.log('⚠️ No keycaps selected for purchase')
         alert('Please select keycaps to purchase')
@@ -1030,7 +1035,7 @@ export function App() {
 
   // Welcome/Landing Page with INSANE animations
   if (currentPage === 'welcome') {
-  return (
+    return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950 overflow-hidden">
         {/* Animated background particles */}
         <div className="absolute inset-0">
@@ -1132,7 +1137,7 @@ export function App() {
                   }`}>
                     Keyboards
                   </span>
-      </h1>
+                </h1>
               </div>
               
               <p className={`text-slate-400 text-lg font-light max-w-sm mx-auto leading-relaxed transform transition-all duration-1000 delay-700 ${
@@ -1561,7 +1566,7 @@ export function App() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   )}
-                </div>
+          </div>
                 {selectedProducts.keycaps ? (
                   <>
                     <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.keycaps.title}</p>
@@ -1610,7 +1615,7 @@ export function App() {
                   <svg className="w-3 h-3 text-slate-500 group-hover:text-amber-400 ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </div>
+          </div>
                 {selectedProducts.switches ? (
                   <>
                     <p className="text-slate-300 text-xs font-medium group-hover:text-white transition-colors">{selectedProducts.switches.title}</p>
@@ -1653,7 +1658,7 @@ export function App() {
                     : 'border-slate-700/50 hover:border-slate-400/50'
                 }`}
               >
-                <div className="flex items-center space-x-2 mb-2">
+              <div className="flex items-center space-x-2 mb-2">
                   <div className={`w-3 h-3 rounded-full transition-transform ${
                     isAnalyzing && selectedProducts.case
                       ? 'bg-orange-500 animate-pulse' 
@@ -1947,9 +1952,9 @@ export function App() {
                 {selectedProducts.keycaps && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                       <span className="text-white text-sm">Keycaps</span>
-                    </div>
+              </div>
                     <span className="text-green-400 font-medium text-sm">
                       ${(() => {
                         const price = selectedProducts.keycaps.priceRange?.minVariantPrice?.amount ||
@@ -1961,15 +1966,15 @@ export function App() {
                         return price ? parseFloat(price).toFixed(2) : '0.00'
                       })()}
                     </span>
-                  </div>
+            </div>
                 )}
-                
+            
                 {selectedProducts.switches && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
                       <span className="text-white text-sm">Switches</span>
-                    </div>
+              </div>
                     <span className="text-green-400 font-medium text-sm">
                       ${(() => {
                         const price = selectedProducts.switches.priceRange?.minVariantPrice?.amount ||
@@ -1981,15 +1986,15 @@ export function App() {
                         return price ? parseFloat(price).toFixed(2) : '0.00'
                       })()}
                     </span>
-                  </div>
+            </div>
                 )}
-                
+            
                 {selectedProducts.case && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
                       <span className="text-white text-sm">Case</span>
-                    </div>
+              </div>
                     <span className="text-green-400 font-medium text-sm">
                       ${(() => {
                         const price = selectedProducts.case.priceRange?.minVariantPrice?.amount ||
@@ -2001,7 +2006,7 @@ export function App() {
                         return price ? parseFloat(price).toFixed(2) : '0.00'
                       })()}
                     </span>
-                  </div>
+            </div>
                 )}
 
                 {/* Totals */}
@@ -2332,10 +2337,10 @@ export function App() {
             >
               Apply & View in 3D
             </button>
-          </div>
         </div>
       </div>
-    )
+    </div>
+  )
   }
 
   // Cart Confirmation Page
@@ -2388,10 +2393,10 @@ export function App() {
             </button>
             
             <button
-              onClick={() => setCurrentPage('builder')}
+              onClick={() => setCurrentPage('welcome')}
               className="w-full bg-slate-800/60 hover:bg-slate-800/80 border border-slate-700/50 text-slate-300 font-medium py-3 px-6 rounded-xl transition-all duration-200"
             >
-              Continue Building
+              Continue Shopping
             </button>
           </div>
 

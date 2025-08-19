@@ -3,8 +3,19 @@ import { keyTexture } from "./texture";
 import { keyTexturePlain } from "./texture-plain";
 // Removed startup dependency for shop mini compatibility
 import { TextureLoader } from "three/src/loaders/TextureLoader.js";
-import ambiantOcclusionPath from "../../keysim-assets/dist/shadow-key-noise.png";
-import lightMapPath from "../../keysim-assets/materials/white.png";
+
+// CDN-based texture paths
+const CDN_BASE = typeof window !== 'undefined' && window.location 
+  ? (import.meta?.env?.VITE_CDN_BASE_URL || '') 
+  : '';
+
+const getTexturePath = (path) => {
+  const cleanPath = path.replace('../../keysim-assets/', '');
+  return CDN_BASE ? `${CDN_BASE}/textures/keysim-assets/${cleanPath}` : `/keysim-assets/${cleanPath}`;
+};
+
+const ambiantOcclusionPath = getTexturePath('dist/shadow-key-noise.png');
+const lightMapPath = getTexturePath('materials/white.png');
 import initial_settings from "../initial_settings";
 
 const loader = new TextureLoader();
