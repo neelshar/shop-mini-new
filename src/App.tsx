@@ -1486,23 +1486,23 @@ export function App() {
           </div>
 
           {/* AI-Powered Keyboard Sound System */}
-          <div className="mb-8 hidden">
+          <div className="mb-8">
             <MultiProfileKeyboardSounds 
-              compactMode={true}
+              compactMode={false} // Show full interface for testing
               enableAISelector={false} // Disabled since we have auto-matching above
               externalProfile={currentSoundProfile} // Sync with auto-matched profile
               onProfileChange={handleSoundProfileChange} // Handle manual changes
               externalAudioEnabled={isAudioEnabled} // External audio control (mute/unmute)
               onAudioStateChange={handleAudioStateChange} // Audio state changes
-              hideAudioControls={true} // Hide internal controls, use external toggle
+              hideAudioControls={false} // Show controls for testing
               autoInitialize={true} // Auto-initialize audio context in muted state
               className="shadow-lg"
-              onSoundPlay={(profile, key) => {
-                console.log(`🎹 Sound played: ${profile} - ${key}`)
+              onSoundPlay={(key) => {
+                console.log(`🎹 Sound played for key: ${key}`)
               }}
-              onVirtualKeyPress={(fn) => {
-                console.log('🎹 App received keyboard sound function:', !!fn);
-                setKeyboardSoundFunction(() => fn);
+              onVirtualKeyPress={(key, code) => {
+                console.log('🎹 App received virtual key press from sound component:', key, code);
+                // This callback is for when the sound component wants to notify about key presses
               }}
             />
           </div>
@@ -1511,11 +1511,14 @@ export function App() {
           <div className="mb-8">
             <VirtualKeyboard 
               onKeyPress={(key) => {
-                console.log('🎹 App received virtual key press:', key, 'Function available:', !!keyboardSoundFunction);
-                if (keyboardSoundFunction) {
-                  keyboardSoundFunction(key);
+                console.log('🎹 App received virtual key press:', key);
+                // Get the sound component and call its playKeyboardSound function directly
+                const soundComponent = window.multiProfileKeyboardSounds;
+                if (soundComponent && soundComponent.playKeyboardSound) {
+                  console.log('✅ Calling sound component directly');
+                  soundComponent.playKeyboardSound(key);
                 } else {
-                  console.log('❌ No keyboard sound function available');
+                  console.log('❌ No sound component available on window');
                 }
               }}
               isAudioEnabled={isAudioEnabled}
