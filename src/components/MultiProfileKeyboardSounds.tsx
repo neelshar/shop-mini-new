@@ -227,6 +227,13 @@ export function MultiProfileKeyboardSounds({
     }
   }, [externalAudioEnabled]);
 
+  // Sync with external profile changes
+  useEffect(() => {
+    if (externalProfile && externalProfile !== selectedProfile) {
+      setSelectedProfile(externalProfile);
+    }
+  }, [externalProfile]);
+
   // Load sounds for the current profile
   useEffect(() => {
     const loadProfileSounds = async () => {
