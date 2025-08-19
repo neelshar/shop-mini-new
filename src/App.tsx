@@ -249,6 +249,27 @@ export function App() {
     return () => clearTimeout(timer)
   }, [])
 
+  // Add keyboard event listener for sound effects
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (!isAudioEnabled) return
+      
+      // Get the sound component and call its playKeyboardSound function
+      const soundComponent = (window as any).multiProfileKeyboardSounds;
+      if (soundComponent && soundComponent.playKeyboardSound) {
+        soundComponent.playKeyboardSound(event.key);
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('keydown', handleKeyPress);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isAudioEnabled])
+
   // Handle auto sound profile matching from switch selection
   const handleAutoSoundProfileMatch = (profileId: string, analysisResult: any) => {
     console.log('🤖 Auto-matched sound profile:', profileId, analysisResult);
@@ -1485,40 +1506,35 @@ export function App() {
             />
           </div>
 
-          {/* AI-Powered Keyboard Sound System */}
-          <div className="mb-8">
+          {/* Hidden sound system - runs in background */}
+          <div className="hidden">
             <MultiProfileKeyboardSounds 
-              compactMode={false} // Show full interface for testing
-              enableAISelector={false} // Disabled since we have auto-matching above
-              externalProfile={currentSoundProfile} // Sync with auto-matched profile
-              onProfileChange={handleSoundProfileChange} // Handle manual changes
-              externalAudioEnabled={isAudioEnabled} // External audio control (mute/unmute)
-              onAudioStateChange={handleAudioStateChange} // Audio state changes
-              hideAudioControls={false} // Show controls for testing
-              autoInitialize={true} // Auto-initialize audio context in muted state
-              className="shadow-lg"
+              compactMode={true}
+              enableAISelector={false}
+              externalProfile={currentSoundProfile}
+              onProfileChange={handleSoundProfileChange}
+              externalAudioEnabled={isAudioEnabled}
+              onAudioStateChange={handleAudioStateChange}
+              hideAudioControls={true} // Hide all UI controls
+              autoInitialize={true}
+              className=""
               onSoundPlay={(key) => {
-                console.log(`🎹 Sound played for key: ${key}`)
+                // Sound played
               }}
               onVirtualKeyPress={(key, code) => {
-                console.log('🎹 App received virtual key press from sound component:', key, code);
-                // This callback is for when the sound component wants to notify about key presses
+                // Virtual key press
               }}
             />
           </div>
 
-          {/* Virtual Keyboard for Mobile Testing */}
+          {/* Virtual Keyboard */}
           <div className="mb-8">
             <VirtualKeyboard 
               onKeyPress={(key) => {
-                console.log('🎹 App received virtual key press:', key);
                 // Get the sound component and call its playKeyboardSound function directly
                 const soundComponent = window.multiProfileKeyboardSounds;
                 if (soundComponent && soundComponent.playKeyboardSound) {
-                  console.log('✅ Calling sound component directly');
                   soundComponent.playKeyboardSound(key);
-                } else {
-                  console.log('❌ No sound component available on window');
                 }
               }}
               isAudioEnabled={isAudioEnabled}
