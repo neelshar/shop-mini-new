@@ -1,8 +1,19 @@
 import * as THREE from "./three-compat";
 import { store } from "./store";
-import wallShadowPath from "../keysim-assets/dist/shadow-wall.png";
 import { TextureLoader } from "three/src/loaders/TextureLoader.js";
 import ThreeUtil from "../keysim-util/three";
+
+// CDN-based texture paths
+const CDN_BASE = typeof window !== 'undefined' && window.location 
+  ? (import.meta?.env?.VITE_CDN_BASE_URL || '') 
+  : '';
+
+const getTexturePath = (path) => {
+  const cleanPath = path.replace('../../keysim-assets/', '');
+  return CDN_BASE ? `${CDN_BASE}/textures/keysim-assets/${cleanPath}` : `/keysim-assets/${cleanPath}`;
+};
+
+const wallShadowPath = getTexturePath('dist/shadow-wall.png');
 
 export default class Room {
   constructor(options) {

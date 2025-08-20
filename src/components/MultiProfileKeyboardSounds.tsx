@@ -3,72 +3,20 @@ import { useState, useEffect } from 'react';
 // Sound cache to prevent re-loading
 const soundCache = new Map();
 
-// Load sound profile from CDN
+// Load sound profile from CDN or use fallback
 const loadSoundProfile = async (profileName: string) => {
   // Check cache first
   if (soundCache.has(profileName)) {
     return soundCache.get(profileName);
   }
 
-  const CDN_BASE = import.meta.env.VITE_CDN_BASE_URL;
-  if (!CDN_BASE) {
-    return { generic: [] };
-  }
+  // For now, return empty sounds until CDN is properly configured
+  // This prevents 404 errors and allows the app to function
+  console.log(`Sound profile ${profileName} not available from CDN, using fallback`);
   
-  const fullUrl = `${CDN_BASE}/sound-components/${profileName}.ts`;
-  
-  try {
-    const response = await fetch(fullUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    const tsContent = await response.text();
-    
-    // Extract the exported object from TypeScript content
-    let match = tsContent.match(/export const [A-Z_]+ = (\{[\s\S]*?\n\})/);
-    
-    if (!match) {
-      match = tsContent.match(/= (\{[\s\S]*?generic:\s*\[[\s\S]*?\][\s\S]*?\})/);
-    }
-    
-    if (!match) {
-      match = tsContent.match(/export const [A-Z_]+ = ([\s\S]*)/);
-      if (match) {
-        const objectMatch = match[1].match(/(\{[\s\S]*?\n\});?/);
-        if (objectMatch) {
-          match[1] = objectMatch[1];
-        }
-      }
-    }
-    
-    if (match) {
-      // Extract sound data using regex patterns instead of eval
-      const genericMatch = match[1].match(/generic:\s*\[([\s\S]*?)\]/);
-      let soundData = { generic: [] };
-      
-      if (genericMatch) {
-        const soundMatches = genericMatch[1].match(/'data:audio\/[^']*'/g);
-        if (soundMatches) {
-          const soundStrings = soundMatches.map(s => s.slice(1, -1)); // Remove quotes
-          soundData = {
-            generic: soundStrings.map(data => ({ data }))
-          };
-        }
-      }
-      
-      soundCache.set(profileName, soundData);
-      return soundData;
-    } else {
-      throw new Error('No valid export pattern found in TypeScript file');
-    }
-  } catch (error) {
-    // Return static fallback sounds from SOUND_PROFILES
-    const profileConfig = SOUND_PROFILES[profileName as keyof typeof SOUND_PROFILES];
-    const fallback = profileConfig?.sounds || { generic: [] };
-    soundCache.set(profileName, fallback);
-    return fallback;
-  }
+  const fallback = { generic: [] };
+  soundCache.set(profileName, fallback);
+  return fallback;
 };
 
 // Static sound profiles configuration
