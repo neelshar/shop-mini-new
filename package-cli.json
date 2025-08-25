@@ -1,0 +1,13 @@
+{
+  "name": "keyboard-builder-cli",
+  "private": true,
+  "version": "0.0.1",
+  "description": "CLI environment for Shop Mini submission",
+  "dependencies": {
+    "@shopify/shop-minis-cli": "0.0.178",
+    "@shopify/shop-minis-react": "0.0.34",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "suppress-experimental-warnings": "^2.0.0"
+  }
+}

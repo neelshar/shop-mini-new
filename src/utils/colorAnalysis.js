@@ -411,6 +411,69 @@ Format your response as JSON:
     return colorAnalysis;
   }
 
+  /**
+   * Calculate the relative luminance of a color (brightness)
+   * @param {string} hexColor - Hex color string (e.g., '#FF0000')
+   * @returns {number} - Luminance value between 0 (dark) and 1 (light)
+   */
+  calculateLuminance(hexColor) {
+    // Remove # if present
+    const hex = hexColor.replace('#', '');
+    
+    // Convert hex to RGB
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    
+    // Apply gamma correction
+    const gamma = (c) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    
+    // Calculate relative luminance
+    return 0.2126 * gamma(r) + 0.7152 * gamma(g) + 0.0722 * gamma(b);
+  }
+
+  /**
+   * Determine if a color is light or dark
+   * @param {string} hexColor - Hex color string
+   * @returns {boolean} - true if light, false if dark
+   */
+  isLightColor(hexColor) {
+    const luminance = this.calculateLuminance(hexColor);
+    return luminance > 0.5; // Threshold for light vs dark
+  }
+
+  /**
+   * Get optimal background color for contrast with given color
+   * @param {string} hexColor - The case color to contrast against
+   * @returns {string} - Hex color for optimal background contrast
+   */
+  getContrastingBackgroundColor(hexColor) {
+    const isLight = this.isLightColor(hexColor);
+    
+    if (isLight) {
+      // Case is light, use dark background
+      return '#1a1a1a'; // Very dark gray/black
+    } else {
+      // Case is dark, use light background
+      return '#f5f5f5'; // Very light gray/white
+    }
+  }
+
+  /**
+   * Calculate contrast ratio between two colors
+   * @param {string} color1 - First hex color
+   * @param {string} color2 - Second hex color
+   * @returns {number} - Contrast ratio (1-21, higher is better contrast)
+   */
+  calculateContrastRatio(color1, color2) {
+    const lum1 = this.calculateLuminance(color1);
+    const lum2 = this.calculateLuminance(color2);
+    
+    const lighter = Math.max(lum1, lum2);
+    const darker = Math.min(lum1, lum2);
+    
+    return (lighter + 0.05) / (darker + 0.05);
+  }
 
   /**
    * Mock color analysis for testing without API

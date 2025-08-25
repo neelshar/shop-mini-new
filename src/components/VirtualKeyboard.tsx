@@ -99,13 +99,13 @@ export function VirtualKeyboard({ onKeyPress, isAudioEnabled, className = '' }: 
     };
 
     // Add event listeners with capture: true and passive: true to avoid interfering with sound system
-    document.addEventListener('keydown', handlePhysicalKeyDown, { capture: true, passive: true });
-    document.addEventListener('keyup', handlePhysicalKeyUp, { capture: true, passive: true });
+    document.addEventListener('keydown', handlePhysicalKeyDown as EventListener, { capture: true, passive: true } as AddEventListenerOptions);
+    document.addEventListener('keyup', handlePhysicalKeyUp as EventListener, { capture: true, passive: true } as AddEventListenerOptions);
 
     // Cleanup
     return () => {
-      document.removeEventListener('keydown', handlePhysicalKeyDown, { capture: true, passive: true });
-      document.removeEventListener('keyup', handlePhysicalKeyUp, { capture: true, passive: true });
+      document.removeEventListener('keydown', handlePhysicalKeyDown as EventListener, { capture: true, passive: true } as AddEventListenerOptions);
+      document.removeEventListener('keyup', handlePhysicalKeyUp as EventListener, { capture: true, passive: true } as AddEventListenerOptions);
     };
   }, [isAudioEnabled]);
 

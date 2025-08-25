@@ -1,19 +1,8 @@
 import * as THREE from "./three-compat";
 import { store } from "./store";
+import wallShadowPath from "../keysim-assets/dist/shadow-wall.png";
 import { TextureLoader } from "three/src/loaders/TextureLoader.js";
 import ThreeUtil from "../keysim-util/three";
-
-// CDN-based texture paths
-const CDN_BASE = typeof window !== 'undefined' && window.location 
-  ? (import.meta?.env?.VITE_CDN_BASE_URL || '') 
-  : '';
-
-const getTexturePath = (path) => {
-  const cleanPath = path.replace('../../keysim-assets/', '');
-  return CDN_BASE ? `${CDN_BASE}/textures/keysim-assets/${cleanPath}` : `/keysim-assets/${cleanPath}`;
-};
-
-const wallShadowPath = getTexturePath('dist/shadow-wall.png');
 
 export default class Room {
   constructor(options) {
@@ -26,21 +15,28 @@ export default class Room {
     let loader = new TextureLoader();
     this.wall = ThreeUtil.createBox(130, 50, 1, 0, 20, -20, this.options.color);
     //Fake ambiant occlusion on wall
-    let wallShadowTexture = loader.load(wallShadowPath);
-    wallShadowTexture.repeat.set(1, 8);
-    let wallShadowMaterial = new THREE.MeshBasicMaterial({
-      color: "#ffffff",
-      map: wallShadowTexture,
-      transparent: true,
-    });
-    wallShadowMaterial.opacity = 0.1;
-    let wallShadowPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(130, 50),
-      wallShadowMaterial
-    );
-    wallShadowPlane.material.side = THREE.DoubleSide;
-    wallShadowPlane.position.z = -19.4;
-    wallShadowPlane.position.y = 20;
+    try {
+      let wallShadowTexture = loader.load(wallShadowPath);
+      wallShadowTexture.repeat.set(1, 8);
+      let wallShadowMaterial = new THREE.MeshBasicMaterial({
+        color: "#ffffff",
+        map: wallShadowTexture,
+        transparent: true,
+      });
+      wallShadowMaterial.opacity = 0.1;
+      let wallShadowPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(130, 50),
+        wallShadowMaterial
+      );
+      wallShadowPlane.material.side = THREE.DoubleSide;
+      wallShadowPlane.position.z = -19.4;
+      wallShadowPlane.position.y = 20;
+      
+      //add shadow plane to scene
+      this.options.scene.add(wallShadowPlane);
+    } catch (error) {
+      console.warn('Shadow texture could not be loaded:', error);
+    }
 
     //desk surface
     let desk_depth = 60;
@@ -57,7 +53,7 @@ export default class Room {
     this.desk.receiveShadow = true;
 
     //add to scene
-    this.options.scene.add(this.desk, this.wall, wallShadowPlane);
+    this.options.scene.add(this.desk, this.wall);
 
     var self = this;
     // Listen for the event.

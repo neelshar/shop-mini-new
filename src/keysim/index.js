@@ -1,6 +1,7 @@
 import SceneManager from "./sceneManager";
 import CaseManager from "./case/caseManager";
 import KeyManager from "./key/keyManager";
+import Room from "./room";
 import * as THREE from "./three-compat";
 
 // Make Three.js globally available for color updates
@@ -28,7 +29,12 @@ export default (element) => {
       scene: ThreeApp.scene,
     });
 
-    console.log('✅ KeySim managers initialized:', { ThreeApp, KEYS, CASE });
+    const ROOM = new Room({
+      scene: ThreeApp.scene,
+      color: "#cccccc" // Default background color
+    });
+
+    console.log('✅ KeySim managers initialized:', { ThreeApp, KEYS, CASE, ROOM });
 
     //start render loop
     ThreeApp.add(KEYS);
@@ -44,9 +50,9 @@ export default (element) => {
       document.dispatchEvent(new CustomEvent('force_key_material_update'));
     }, 200);
     
-    console.log('🎹 KeySim fully loaded with case and keys!');
+    console.log('🎹 KeySim fully loaded with case, keys, and room!');
     
-    return { ThreeApp, KEYS, CASE }; // Return for debugging
+    return { ThreeApp, KEYS, CASE, ROOM }; // Return for debugging
   } catch (error) {
     console.error('Failed to initialize KeySim:', error);
     // Fallback will be handled by the React component
