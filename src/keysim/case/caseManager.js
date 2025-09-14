@@ -10,33 +10,44 @@ import { lightTexture } from "./lightTexture";
 import initial_settings from "../initial_settings";
 
 import { TextureLoader } from "three/src/loaders/TextureLoader.js";
-import shadowPath from "../../keysim-assets/dist/shadow-key-noise.png";
-import noisePath from "../../keysim-assets/dist/noise.png";
-import brushedRoughness from "../../keysim-assets/dist/brushed-metal_roughness-512.png";
-import brushedAlbedo from "../../keysim-assets/dist/brushed-metal_albedo-512.png";
-import brushedAo from "../../keysim-assets/dist/brushed-metal_ao-512.png";
 
-import shadow_path_100 from "../../keysim-assets/shadows/100.png";
-import shadow_path_40 from "../../keysim-assets/shadows/40.png";
-import shadow_path_60 from "../../keysim-assets/shadows/60.png";
-import shadow_path_60hhkb from "../../keysim-assets/shadows/60hhkb.png";
-import shadow_path_60iso from "../../keysim-assets/shadows/60iso.png";
-import shadow_path_60wkl from "../../keysim-assets/shadows/60wkl.png";
-import shadow_path_65 from "../../keysim-assets/shadows/65.png";
-import shadow_path_75 from "../../keysim-assets/shadows/75.png";
-import shadow_path_80 from "../../keysim-assets/shadows/80.png";
-import shadow_path_95 from "../../keysim-assets/shadows/95.png";
-import shadow_path_leftnum from "../../keysim-assets/shadows/leftnum.png";
-import shadow_path_numpad from "../../keysim-assets/shadows/numpad.png";
-import shadow_path_40ortho from "../../keysim-assets/shadows/40ortho.png";
-import shadow_path_50ortho from "../../keysim-assets/shadows/50ortho.png";
+// CDN-based texture paths
+const CDN_BASE = typeof window !== 'undefined' && window.location 
+  ? (import.meta?.env?.VITE_CDN_BASE_URL || '') 
+  : '';
 
-import nx from "../../keysim-assets/dist/nx.jpg";
-import ny from "../../keysim-assets/dist/ny.jpg";
-import nz from "../../keysim-assets/dist/nz.jpg";
-import px from "../../keysim-assets/dist/px.jpg";
-import py from "../../keysim-assets/dist/py.jpg";
-import pz from "../../keysim-assets/dist/pz.jpg";
+const getTexturePath = (path) => {
+  const cleanPath = path.replace('../../keysim-assets/', '');
+  return CDN_BASE ? `${CDN_BASE}/textures/keysim-assets/${cleanPath}` : `/keysim-assets/${cleanPath}`;
+};
+
+const shadowPath = getTexturePath('dist/shadow-key-noise.png');
+const noisePath = getTexturePath('dist/noise.png');
+const brushedRoughness = getTexturePath('dist/brushed-metal_roughness-512.png');
+const brushedAlbedo = getTexturePath('dist/brushed-metal_albedo-512.png');
+const brushedAo = getTexturePath('dist/brushed-metal_ao-512.png');
+
+const shadow_path_100 = getTexturePath('shadows/100.png');
+const shadow_path_40 = getTexturePath('shadows/40.png');
+const shadow_path_60 = getTexturePath('shadows/60.png');
+const shadow_path_60hhkb = getTexturePath('shadows/60hhkb.png');
+const shadow_path_60iso = getTexturePath('shadows/60iso.png');
+const shadow_path_60wkl = getTexturePath('shadows/60wkl.png');
+const shadow_path_65 = getTexturePath('shadows/65.png');
+const shadow_path_75 = getTexturePath('shadows/75.png');
+const shadow_path_80 = getTexturePath('shadows/80.png');
+const shadow_path_95 = getTexturePath('shadows/95.png');
+const shadow_path_leftnum = getTexturePath('shadows/leftnum.png');
+const shadow_path_numpad = getTexturePath('shadows/numpad.png');
+const shadow_path_40ortho = getTexturePath('shadows/40ortho.png');
+const shadow_path_50ortho = getTexturePath('shadows/50ortho.png');
+
+const nx = getTexturePath('dist/nx.jpg');
+const ny = getTexturePath('dist/ny.jpg');
+const nz = getTexturePath('dist/nz.jpg');
+const px = getTexturePath('dist/px.jpg');
+const py = getTexturePath('dist/py.jpg');
+const pz = getTexturePath('dist/pz.jpg');
 
 const shadow_paths = {
   shadow_path_100,
@@ -222,6 +233,25 @@ export default class CaseManager {
     subscribe("colorways.active", () => {
       this.updateLightMap();
     });
+
+    // Listen for dynamic case color updates from the UI
+    document.addEventListener("force_case_color_update", (event) => {
+      console.log('🎨 Received case color update event:', event.detail);
+      if (event.detail && event.detail.color) {
+        this.color = event.detail.color;
+        this.updateCaseMaterial(event.detail.color);
+        console.log('✅ Case color updated dynamically to:', event.detail.color);
+      }
+    });
+
+    // Also expose this instance globally for debugging
+    window.caseManager = this;
+    
+    // Expose scene and renderer for instant color updates
+    if (this.scene) window.scene = this.scene;
+    if (this.renderer) window.renderer = this.renderer;
+    
+    console.log('✅ Globals exposed: caseManager, scene, renderer');
   }
 
   position() {
@@ -359,13 +389,6 @@ export default class CaseManager {
         console.log('✅ Case added to group! Case mesh:', this.case.name, 'Position:', this.case.position);
         console.log('✅ Group children count after adding case:', this.group.children.length);
         
-        // Set proper case color (gray)
-        this.case.material = new THREE.MeshBasicMaterial({ 
-          color: '#eeeeee', // Nice gray color like the real KeySim
-          wireframe: false,
-          transparent: false
-        });
-        
       } else {
         console.error('❌ Failed to create case mesh!');
       }
@@ -388,36 +411,48 @@ export default class CaseManager {
   }
 
   updateCaseMaterial(color = this.color, finish = this.finish) {
-    let materials = [];
-    let options = MATERIAL_OPTIONS[finish];
-    options.lightMap = this.ao;
-    if (finish !== "matte") {
-      options.envMap = this.cubemap;
-      options.roughnessMap = this.roughnessMap;
-      options.map = this.albedoMap;
+    console.log('🔧 updateCaseMaterial called with color:', color, 'finish:', finish);
+    
+    // Update the instance color
+    this.color = color;
+    
+    if (!this.case) {
+      console.log('⚠️ No case mesh found to update');
+      return;
     }
-    //create materials
-    let materialPrimary = new THREE.MeshPhysicalMaterial(
-      Object.assign(
-        {
+    
+    // Create a simple, reliable material that won't become transparent
+    let material = new THREE.MeshBasicMaterial({
           color: color,
-        },
-        options
-      )
-    );
-    //side material
-    options.lightMap = this.lightTexture;
-    let materialSecondary = new THREE.MeshPhysicalMaterial(
-      Object.assign(
-        {
-          color: color,
-          aoMap: this.aoShadowTexture,
-          aoMapIntensity: 0.6,
-        },
-        options
-      )
-    );
-    materials.push(materialPrimary, materialSecondary);
-    this.case.material = materials;
+      transparent: false,
+      opacity: 1.0
+    });
+    
+    // Set the material (works for both single material and material array setups)
+    this.case.material = material;
+    
+    console.log('✅ Case material updated successfully with color:', color);
+    
+    // Force a render update
+    if (material.needsUpdate !== undefined) {
+      material.needsUpdate = true;
+    }
+    
+    // Force scene re-render by marking everything as needing update
+    if (this.scene) {
+      this.scene.traverse((child) => {
+        if (child.material) {
+          child.material.needsUpdate = true;
+        }
+      });
+      
+      // Trigger a manual render if possible
+      if (window.threeRenderer) {
+        window.threeRenderer.render(this.scene, window.threeCamera);
+      }
+    }
+    
+    // Also dispatch a render event
+    document.dispatchEvent(new CustomEvent('force_three_render'));
   }
 }

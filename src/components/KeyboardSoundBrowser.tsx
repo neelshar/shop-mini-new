@@ -58,9 +58,10 @@ export function KeyboardSoundBrowser({ isOpen, onClose, onSelectSoundPack }: Key
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Discover all sound packs from the public directory
+  // Discover all sound packs from the CDN
   const discoverSoundPacks = async (): Promise<SoundPack[]> => {
     const packs: SoundPack[] = []
+    const CDN_BASE = import.meta.env.VITE_CDN_BASE_URL || ''
 
     // Multi-press sound packs
     const multiPressPacks = [
@@ -87,14 +88,17 @@ export function KeyboardSoundBrowser({ isOpen, onClose, onSelectSoundPack }: Key
     // Load multi-press configs
     for (const pack of multiPressPacks) {
       try {
-        const response = await fetch(`/kbd_sounds_formatted/multi_press/${pack}/config.json`)
+        const soundPath = `sounds/kbd_sounds_formatted/multi_press/${pack}/config.json`
+        const url = CDN_BASE ? `${CDN_BASE}/${soundPath}` : `/kbd_sounds_formatted/multi_press/${pack}/config.json`
+        const response = await fetch(url)
         if (response.ok) {
           const config = await response.json()
+          const basePath = CDN_BASE ? `${CDN_BASE}/sounds/kbd_sounds_formatted/multi_press/${pack}` : `/kbd_sounds_formatted/multi_press/${pack}`
           packs.push({
             id: config.id || pack,
             name: config.name || pack,
             type: 'multi_press',
-            path: `/kbd_sounds_formatted/multi_press/${pack}`,
+            path: basePath,
             config,
             description: config.description,
             author: config.m_author,
@@ -109,14 +113,17 @@ export function KeyboardSoundBrowser({ isOpen, onClose, onSelectSoundPack }: Key
     // Load single sprite configs
     for (const pack of singleSpritePacks) {
       try {
-        const response = await fetch(`/kbd_sounds_formatted/single_sprite/${pack}/config.json`)
+        const soundPath = `sounds/kbd_sounds_formatted/single_sprite/${pack}/config.json`
+        const url = CDN_BASE ? `${CDN_BASE}/${soundPath}` : `/kbd_sounds_formatted/single_sprite/${pack}/config.json`
+        const response = await fetch(url)
         if (response.ok) {
           const config = await response.json()
+          const basePath = CDN_BASE ? `${CDN_BASE}/sounds/kbd_sounds_formatted/single_sprite/${pack}` : `/kbd_sounds_formatted/single_sprite/${pack}`
           packs.push({
             id: config.id || pack,
             name: config.name || pack,
             type: 'single_sprite',
-            path: `/kbd_sounds_formatted/single_sprite/${pack}`,
+            path: basePath,
             config,
             tags: config.tags
           })
@@ -129,14 +136,17 @@ export function KeyboardSoundBrowser({ isOpen, onClose, onSelectSoundPack }: Key
     // Load multi-press release configs
     for (const pack of multiPressReleasePacks) {
       try {
-        const response = await fetch(`/kbd_sounds_formatted/multi_press_release/${pack}/config.json`)
+        const soundPath = `sounds/kbd_sounds_formatted/multi_press_release/${pack}/config.json`
+        const url = CDN_BASE ? `${CDN_BASE}/${soundPath}` : `/kbd_sounds_formatted/multi_press_release/${pack}/config.json`
+        const response = await fetch(url)
         if (response.ok) {
           const config = await response.json()
+          const basePath = CDN_BASE ? `${CDN_BASE}/sounds/kbd_sounds_formatted/multi_press_release/${pack}` : `/kbd_sounds_formatted/multi_press_release/${pack}`
           packs.push({
             id: config.id || pack,
             name: config.name || pack,
             type: 'multi_press_release',
-            path: `/kbd_sounds_formatted/multi_press_release/${pack}`,
+            path: basePath,
             config
           })
         }

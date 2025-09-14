@@ -1,0 +1,17 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package-cli.json package.json
+COPY src/ src/
+COPY public/ public/
+COPY *.json ./
+COPY *.js ./
+COPY *.mjs ./
+
+# Install CLI-compatible dependencies
+RUN npm install
+
+# Submit command
+CMD ["npx", "shop-minis", "submit"]

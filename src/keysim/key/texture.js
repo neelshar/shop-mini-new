@@ -7,7 +7,7 @@ const MIP_COUNT = 0;
 
 //genertates a texture with canvas for top of key
 export const keyTexture = (opts) => {
-  console.log('🎨 keyTexture called for key:', opts.code, 'legend:', opts.legend, 'opts:', opts);
+  console.log('🎨 keyTexture called for key:', opts.code, 'legend:', opts.legend, 'background:', opts.background, 'opts:', opts);
   
   // Texture creation confirmed working
   if (opts.code === 'KC_Q') {
@@ -24,6 +24,43 @@ export const keyTexture = (opts) => {
   let subColor = opts.subColor || opts.color;
   let fg = opts.color;
   let bg = opts.background;
+  
+  // SIMPLE CONTRAST CALCULATION FUNCTION
+  const getContrastingTextColor = (backgroundColor) => {
+    console.log('🔍 getContrastingTextColor input:', backgroundColor, 'type:', typeof backgroundColor);
+    
+    // If no valid background color, default to white text on dark background
+    if (!backgroundColor || typeof backgroundColor !== 'string') {
+      console.log('🔍 Invalid background, using white text');
+      return '#FFFFFF';
+    }
+    
+    // Convert hex color to RGB
+    let hex = backgroundColor.replace('#', '');
+    
+    // Handle 3-digit hex colors
+    if (hex.length === 3) {
+      hex = hex.split('').map(char => char + char).join('');
+    }
+    
+    // Parse RGB values
+    const r = parseInt(hex.substr(0, 2), 16) || 0;
+    const g = parseInt(hex.substr(2, 2), 16) || 0;
+    const b = parseInt(hex.substr(4, 2), 16) || 0;
+    
+    console.log('🔍 RGB values:', { r, g, b, hex, originalBg: backgroundColor });
+    
+    // Simple brightness calculation (0-255 scale)
+    const brightness = (r + g + b) / 3;
+    
+    console.log('🔍 Calculated brightness:', brightness);
+    
+    // INVERTED LOGIC: If brightness > 128, use white text
+    // If brightness <= 128, use black text
+    const result = brightness > 128 ? '#FFFFFF' : '#000000';
+    console.log('🔍 Final text color:', result, 'for brightness:', brightness);
+    return result;
+  };
 
   //iso enter add extra .25 for overhang
   let isIsoEnter = key === "KC_ENT" && h > 1;
@@ -42,10 +79,7 @@ export const keyTexture = (opts) => {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // DEBUGGING: Add a bright colored border to see if texture is being applied
-  ctx.strokeStyle = '#ff00ff'; // Bright magenta border for debugging
-  ctx.lineWidth = 4;
-  ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+  // Clean keycap rendering without debug borders
 
   //draw gradient to simulate sculpting
   let gradient;
@@ -134,14 +168,7 @@ export const keyTexture = (opts) => {
 
   // Old font setup removed - using dynamic sizing below
   
-  // DEBUGGING: Draw a test red dot to see if text drawing works
-  ctx.fillStyle = '#ff0000';
-  ctx.beginPath();
-  ctx.arc(50, 50, 10, 0, 2 * Math.PI);
-  ctx.fill();
-  
-  // Reset to white for text
-  ctx.fillStyle = '#ffffff';
+  // No debugging elements needed
   let ent_off_x = 0;
   let ent_off_y = 0;
   if (isIsoEnter) {
@@ -158,14 +185,15 @@ export const keyTexture = (opts) => {
   ctx.scale(1, -1); // Flip Y axis
   ctx.translate(0, -canvas.height); // Move origin back to top-left
   
-  // Beautiful blue keycap background with excellent visibility
-  ctx.fillStyle = '#4a90e2'; // Clear blue background
+  // Use the actual keycap background color
+  ctx.fillStyle = bg; // Use the provided background color
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // Darker blue border for definition
-  ctx.strokeStyle = '#2c5aa0'; // Darker blue border
-  ctx.lineWidth = 8;
-  ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+  // Add subtle border with darker version of the background
+  const borderColor = getContrastingTextColor(bg) === '#FFFFFF' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.2)';
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
   
   // Set up text properties with DYNAMIC FONT SIZING
   ctx.textAlign = 'center';
@@ -208,8 +236,18 @@ export const keyTexture = (opts) => {
     canvas: { width: canvas.width, height: canvas.height }
   });
   
-  // Draw text with black color on blue background
-  ctx.fillStyle = '#000000'; // Black text on blue background
+  // Calculate contrasting text color based on background
+  const contrastingTextColor = getContrastingTextColor(bg);
+  ctx.fillStyle = contrastingTextColor;
+  
+  console.log('🎨 Keycap contrast DEBUG:', {
+    key: key,
+    backgroundColor: bg,
+    bgType: typeof bg,
+    bgValue: bg,
+    calculatedTextColor: contrastingTextColor,
+    reason: contrastingTextColor === '#FFFFFF' ? 'bright background -> white text' : 'dark background -> black text'
+  });
   
   if (mainChar && mainChar.trim().length > 0) {
     console.log('🔤 Drawing FLIPPED character:', mainChar, 'for key:', key);
@@ -219,11 +257,7 @@ export const keyTexture = (opts) => {
     ctx.fillText('X', canvas.width / 2, canvas.height / 2);
   }
   
-  // Add a subtle accent dot
-  ctx.fillStyle = '#87ceeb'; // Light blue accent dot
-  ctx.beginPath();
-  ctx.arc(canvas.width - 20, 20, 10, 0, 2 * Math.PI);
-  ctx.fill();
+  // No accent dots - keep text clean
   
   // Restore the context state
   ctx.restore();
@@ -237,6 +271,10 @@ export const keyTexture = (opts) => {
   texture.flipY = false; // Don't flip texture since we're flipping the canvas drawing
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
+  // Use higher quality filtering
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
   
   console.log('🖼️ Created texture for key:', key, 'texture:', texture, 'canvas size:', canvas.width + 'x' + canvas.height);
   
@@ -276,6 +314,5 @@ export const keyTexture = (opts) => {
   //document.body.appendChild(canvas);
 
   texture.needsUpdate = true;
-  texture.minFilter = THREE.NearestMipmapNearestFilter;
   return texture;
 };

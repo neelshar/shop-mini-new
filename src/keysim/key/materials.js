@@ -3,8 +3,19 @@ import { keyTexture } from "./texture";
 import { keyTexturePlain } from "./texture-plain";
 // Removed startup dependency for shop mini compatibility
 import { TextureLoader } from "three/src/loaders/TextureLoader.js";
-import ambiantOcclusionPath from "../../keysim-assets/dist/shadow-key-noise.png";
-import lightMapPath from "../../keysim-assets/materials/white.png";
+
+// CDN-based texture paths
+const CDN_BASE = typeof window !== 'undefined' && window.location 
+  ? (import.meta?.env?.VITE_CDN_BASE_URL || '') 
+  : '';
+
+const getTexturePath = (path) => {
+  const cleanPath = path.replace('../../keysim-assets/', '');
+  return CDN_BASE ? `${CDN_BASE}/textures/keysim-assets/${cleanPath}` : `/keysim-assets/${cleanPath}`;
+};
+
+const ambiantOcclusionPath = getTexturePath('dist/shadow-key-noise.png');
+const lightMapPath = getTexturePath('materials/white.png');
 import initial_settings from "../initial_settings";
 
 const loader = new TextureLoader();
@@ -84,17 +95,21 @@ const getMaterialSet = (opts, offset) => {
     console.log('🎨 FORCING TEXTURE APPLICATION for', opts.code);
     let legendTexture = keyTexture(opts);
     
-    // Use MeshBasicMaterial for guaranteed visibility (no lighting dependencies)
-    let top = new THREE.MeshBasicMaterial({
+    // Use MeshStandardMaterial for realistic lighting and reflections
+    let top = new THREE.MeshStandardMaterial({
       map: legendTexture,
       transparent: false,
       opacity: 1.0,
-      side: THREE.DoubleSide, // Render both sides
+      side: THREE.DoubleSide,
+      roughness: 0.3,        // Slightly rough surface
+      metalness: 0.0,        // Non-metallic plastic
+      envMapIntensity: 0.5,  // Environmental reflections
     });
     
     // Force texture properties for maximum visibility
-    top.map.minFilter = THREE.LinearFilter;
+    top.map.minFilter = THREE.LinearMipmapLinearFilter;
     top.map.magFilter = THREE.LinearFilter;
+    top.map.generateMipmaps = true;
     top.map.needsUpdate = true;
     top.needsUpdate = true;
     
@@ -113,15 +128,19 @@ const getMaterialSet = (opts, offset) => {
     console.log('🎨 Creating SIDE material (plain texture, no text) for', opts.code);
     let plainTexture = keyTexturePlain(opts);
     
-    let sideMaterial = new THREE.MeshBasicMaterial({
+    let sideMaterial = new THREE.MeshStandardMaterial({
       map: plainTexture,
       transparent: false,
       opacity: 1.0,
+      roughness: 0.4,        // Slightly more rough than top
+      metalness: 0.0,        // Non-metallic plastic
+      envMapIntensity: 0.3,  // Less reflective than top
     });
     
     // Force texture properties
-    sideMaterial.map.minFilter = THREE.LinearFilter;
+    sideMaterial.map.minFilter = THREE.LinearMipmapLinearFilter;
     sideMaterial.map.magFilter = THREE.LinearFilter;
+    sideMaterial.map.generateMipmaps = true;
     sideMaterial.map.needsUpdate = true;
     sideMaterial.needsUpdate = true;
     
