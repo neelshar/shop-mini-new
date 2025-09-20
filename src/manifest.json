@@ -1,6 +1,20 @@
 {
   "name": "keyboard-builder",
-  "permissions": [],
+  "permissions": [
+    "network",
+    "external_resource_access"
+  ],
+  "external_domains": [
+    "https://d3beh29tnzl3zq.cloudfront.net",
+    "https://api.openai.com",
+    "https://httpbin.org"
+  ],
+  "csp": {
+    "font-src": "'self' data: blob:",
+    "connect-src": "'self' https://d3beh29tnzl3zq.cloudfront.net https://api.openai.com https://httpbin.org https:",
+    "img-src": "'self' data: blob: https:",
+    "media-src": "'self' data: blob: https:"
+  },
   "privacy_policy_url": "https://example.com/privacy",
   "terms_url": "https://example.com/terms",
   "handle": "keyboard-builder-xhzk"
