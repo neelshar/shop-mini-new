@@ -1,4 +1,4 @@
-# 🎹 Custom Keyboard Builder - Shop Mini
+# 🎹 Custom Keyboard Builder - Shop Mini (Implemented in Shopify's Shop app!)
 
 A sophisticated **Shopify Shop Mini** application for building custom mechanical keyboards with real-time 3D visualization, authentic keyboard sounds, and seamless e-commerce integration.
 
