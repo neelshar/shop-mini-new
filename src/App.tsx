@@ -6,6 +6,8 @@ import { MultiProfileKeyboardSounds } from './components/MultiProfileKeyboardSou
 import { AutoSwitchMatcher } from './components/AutoSwitchMatcher'
 import { MinimalAudioToggle } from './components/MinimalAudioToggle'
 import { VirtualKeyboard } from './components/VirtualKeyboard'
+import { PrivacyPolicy } from './components/PrivacyPolicy'
+import { TermsOfService } from './components/TermsOfService'
 import { colorAnalysis } from './utils/colorAnalysis'
 
 // Types for our keyboard configuration
@@ -21,7 +23,7 @@ interface KeyboardConfig {
   switch_color: string
 }
 
-type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer' | 'case-customizer' | 'cart-confirmation'
+type AppPage = 'welcome' | 'preferences' | 'builder' | 'customizer' | 'case-customizer' | 'cart-confirmation' | 'privacy-policy' | 'terms-of-service'
 
 
 
@@ -1250,6 +1252,27 @@ export function App() {
                 ))}
               </div>
             </div>
+
+            {/* Footer Links */}
+            <div className={`mt-8 pt-4 border-t border-slate-800/30 transform transition-all duration-1000 delay-[1900ms] ${
+              isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}>
+              <div className="flex items-center justify-center space-x-6 text-xs text-slate-500">
+                <button
+                  onClick={() => setCurrentPage('privacy-policy')}
+                  className="hover:text-slate-300 transition-colors duration-200 underline decoration-slate-600 hover:decoration-slate-400"
+                >
+                  Privacy Policy
+                </button>
+                <span className="text-slate-600">•</span>
+                <button
+                  onClick={() => setCurrentPage('terms-of-service')}
+                  className="hover:text-slate-300 transition-colors duration-200 underline decoration-slate-600 hover:decoration-slate-400"
+                >
+                  Terms of Service
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2428,6 +2451,16 @@ export function App() {
         </div>
       </div>
     )
+  }
+
+  // Privacy Policy Page
+  if (currentPage === 'privacy-policy') {
+    return <PrivacyPolicy />
+  }
+
+  // Terms of Service Page
+  if (currentPage === 'terms-of-service') {
+    return <TermsOfService />
   }
 
   // This should never be reached, but just in case
